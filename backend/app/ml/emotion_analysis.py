@@ -266,25 +266,24 @@ class EmotionAnalyzer:
         """
         Return True if at least one face is detected in the frame.
 
-        Uses OpenCV's Haar Cascade frontal face detector.  Runs on a
-        half-resolution greyscale copy of the frame for speed.  If the
-        cascade is unavailable (failed to load), always returns True so that
-        every frame is still analysed (graceful degradation).
+        Uses OpenCV's Haar Cascade frontal face detector on the full-resolution
+        frame.  The frontend sends 224×224 JPEG frames — downsampling further
+        shrinks faces to ~30 px where JPEG artifacts cause the cascade to fail
+        on every frame, so we run on the original size instead.
+
+        If the cascade is unavailable (failed to load), always returns True so
+        that every frame is still analysed (graceful degradation).
         """
         if self._face_cascade is None:
             return True  # Cascade unavailable — do not block inference
 
-        # Downsample to half resolution for faster detection; the cascade is
-        # scale-invariant so accuracy is preserved at interview webcam distances.
-        h, w = frame.shape[:2]
-        small = cv2.resize(frame, (w // 2, h // 2), interpolation=cv2.INTER_LINEAR)
-        gray  = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         faces = self._face_cascade.detectMultiScale(
             gray,
             scaleFactor=1.1,
-            minNeighbors=5,
-            minSize=(_MIN_FACE_PX // 2, _MIN_FACE_PX // 2),  # account for half-res
+            minNeighbors=3,       # 5 was too strict for 224×224 JPEG frames
+            minSize=(_MIN_FACE_PX, _MIN_FACE_PX),
         )
         return len(faces) > 0
 
