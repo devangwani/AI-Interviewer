@@ -1,0 +1,46 @@
+# ── Web Framework ─────────────────────────────────────────
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+
+# ── Database ──────────────────────────────────────────────
+motor==3.4.0
+pymongo==4.7.2
+
+# ── Config & Environment ──────────────────────────────────
+pydantic==2.7.1
+pydantic-settings==2.2.1
+python-dotenv==1.0.1
+
+# ── Authentication & Security ─────────────────────────────
+firebase-admin==6.5.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# ── AI / LLM ─────────────────────────────────────────────
+groq==0.9.0
+
+# ── Speech-to-Text ────────────────────────────────────────
+deepgram-sdk==3.2.7
+
+# ── ML — Emotion & Audio ─────────────────────────────────
+# opencv-python-headless is preferred over opencv-python on servers
+# (no GUI dependencies, lower RAM)
+opencv-python-headless==4.9.0.80
+fer==22.5.1
+moviepy==1.0.3
+numpy==1.26.4
+librosa==0.10.2
+soundfile==0.12.1
+
+# ── Deep Learning — MobileNetV2 emotion model (Phase 3C) ─
+# tensorflow-cpu: no GPU libs = lighter install, fine for inference on 8 GB RAM
+# Do NOT pin the version — match whatever Colab used when the .h5 was saved
+tensorflow-cpu
+
+# ── PDF Parsing ───────────────────────────────────────────
+pdfplumber==0.11.0
+
+# ── HTTP Client ───────────────────────────────────────────
+httpx==0.27.0
+websockets==12.0

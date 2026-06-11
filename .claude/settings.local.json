@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p C:/Users/devan/AI-Interviewer/backend/core)",
+      "Bash(mkdir -p C:/Users/devan/AI-Interviewer/backend/models)"
+    ]
+  }
+}

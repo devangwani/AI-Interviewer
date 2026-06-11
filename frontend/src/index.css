@@ -1,0 +1,233 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME TOKENS
+   All colours are expressed as bare R G B triplets so Tailwind's
+   `/ <alpha-value>` syntax (e.g. bg-white/5, border-brand-600/20) works.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── DARK (default) ─────────────────────────────────────────────────────── */
+:root,
+[data-theme="dark"] {
+  --c-white:        255 255 255;
+  --c-btn-text:     255 255 255;
+
+  --c-brand-300:    165 180 252;
+  --c-brand-400:    129 140 248;
+  --c-brand-500:     99 102 241;
+  --c-brand-600:     79  70 229;
+  --c-brand-700:     67  56 202;
+  --c-brand-900:     30  27  75;
+
+  --c-surface-500:   37  37  64;
+  --c-surface-600:   31  31  53;
+  --c-surface-700:   26  26  46;
+  --c-surface-800:   20  20  31;
+  --c-surface-900:   15  15  26;
+
+  --c-slate-100:    241 245 249;
+  --c-slate-200:    226 232 240;
+  --c-slate-300:    203 213 225;
+  --c-slate-400:    148 163 184;
+  --c-slate-500:    100 116 139;
+  --c-slate-600:     71  85 105;
+
+  --shadow-glow:    0 0 24px 2px rgba(99,102,241,0.35);
+  --shadow-glow-sm: 0 0 12px 1px rgba(99,102,241,0.25);
+}
+
+/* ── LIGHT ──────────────────────────────────────────────────────────────── */
+[data-theme="light"] {
+  --c-white:        15  23  42;
+  --c-btn-text:    255 255 255;
+
+  --c-brand-300:    129 140 248;
+  --c-brand-400:     99 102 241;
+  --c-brand-500:     79  70 229;
+  --c-brand-600:     67  56 202;
+  --c-brand-700:     55  48 163;
+  --c-brand-900:    238 242 255;
+
+  --c-surface-500:  203 213 225;
+  --c-surface-600:  226 232 240;
+  --c-surface-700:  241 245 249;
+  --c-surface-800:  248 250 252;
+  --c-surface-900:  255 255 255;
+
+  --c-slate-100:    15  23  42;
+  --c-slate-200:    30  41  59;
+  --c-slate-300:    51  65  85;
+  --c-slate-400:    71  85 105;
+  --c-slate-500:   100 116 139;
+  --c-slate-600:   148 163 184;
+
+  --shadow-glow:    0 0 24px 2px rgba(67,56,202,0.18);
+  --shadow-glow-sm: 0 0 12px 1px rgba(67,56,202,0.10);
+}
+
+/* ── AESTHETIC (#FCF5EE · #FFC4C4 · #EE6983 · #850E35) ─────────────────── */
+/*
+   "white" maps to a deep wine (#1A0A10) — very dark, high contrast on cream,
+   gives headings & glows a luxurious burgundy tone instead of harsh red.
+   Surfaces use the cream→blush gradient. Brand uses the full rose palette.
+*/
+[data-theme="aesthetic"] {
+  --c-white:        26  10  16;    /* #1A0A10  deep wine — primary text / overlays */
+  --c-btn-text:    252 245 238;    /* #FCF5EE  cream — legible on rose buttons     */
+
+  --c-brand-300:   255 196 196;    /* #FFC4C4  soft pink                           */
+  --c-brand-400:   238 105 131;    /* #EE6983  coral                               */
+  --c-brand-500:   210  55 100;    /* deeper coral hover                           */
+  --c-brand-600:   133  14  53;    /* #850E35  deep rose — primary action          */
+  --c-brand-700:   105  10  42;    /* darker rose                                  */
+  --c-brand-900:   252 245 238;    /* #FCF5EE  cream                               */
+
+  --c-surface-900: 252 245 238;    /* #FCF5EE  main page bg                        */
+  --c-surface-800: 255 248 246;    /* warm white — navbar, overlays                */
+  --c-surface-700: 255 236 240;    /* very light blush — card bg                   */
+  --c-surface-600: 255 220 228;    /* soft blush — input bg                        */
+  --c-surface-500: 255 196 196;    /* #FFC4C4  active areas                        */
+
+  --c-slate-100:    26  10  16;    /* #1A0A10  headings                            */
+  --c-slate-200:    64  20  38;    /* dark wine body                               */
+  --c-slate-300:   100  30  55;    /* medium wine                                  */
+  --c-slate-400:   155  60  90;    /* rose — secondary labels                      */
+  --c-slate-500:   200 100 130;    /* soft rose — muted                            */
+  --c-slate-600:   230 160 180;    /* very muted pink                              */
+
+  --shadow-glow:    0 0 32px 6px rgba(133,14,53,0.22);
+  --shadow-glow-sm: 0 0 16px 2px rgba(133,14,53,0.16);
+}
+
+/* ── Aesthetic — rich visual overrides ──────────────────────────────────── */
+/*
+   These rules sit outside @layer so they override Tailwind utilities.
+   They give the aesthetic mode its premium magazine feel beyond what
+   CSS-variable token-swapping alone can achieve.
+*/
+
+/* Dreamy multi-stop gradient page background */
+[data-theme="aesthetic"] body {
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 10%,  rgba(255,196,196,0.45) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 50% at 90% 85%,  rgba(133,14,53,0.12)   0%, transparent 55%),
+    radial-gradient(ellipse 100% 80% at 50% 50%, rgba(238,105,131,0.08) 0%, transparent 70%),
+    #FCF5EE;
+}
+
+/* Frosted rose-glass cards */
+[data-theme="aesthetic"] .glass {
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,0.82) 0%,
+    rgba(255,230,238,0.65) 100%
+  );
+  border: 1px solid rgba(238,105,131,0.22);
+  box-shadow:
+    0 4px 24px rgba(133,14,53,0.07),
+    inset 0 1px 0 rgba(255,255,255,0.90);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+/* Gradient rose button */
+[data-theme="aesthetic"] .btn-primary {
+  background: linear-gradient(135deg, #C21650 0%, #850E35 100%);
+  box-shadow: 0 4px 18px rgba(133,14,53,0.32), inset 0 1px 0 rgba(255,255,255,0.15);
+  border: none;
+  color: #FCF5EE;
+}
+[data-theme="aesthetic"] .btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #D4245F 0%, #A01240 100%);
+  box-shadow: 0 6px 24px rgba(133,14,53,0.42), inset 0 1px 0 rgba(255,255,255,0.18);
+  transform: translateY(-1px);
+}
+[data-theme="aesthetic"] .btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Ghost button rose style */
+[data-theme="aesthetic"] .btn-ghost {
+  border-color: rgba(133,14,53,0.20);
+  color: rgb(100 30 55);
+}
+[data-theme="aesthetic"] .btn-ghost:hover {
+  background: rgba(133,14,53,0.07);
+  border-color: rgba(133,14,53,0.35);
+  color: #850E35;
+}
+
+/* Elegant input fields */
+[data-theme="aesthetic"] .input-field {
+  background: rgba(255,255,255,0.72);
+  border-color: rgba(238,105,131,0.25);
+  color: #1A0A10;
+}
+[data-theme="aesthetic"] .input-field::placeholder {
+  color: rgba(155,60,90,0.55);
+}
+[data-theme="aesthetic"] .input-field:focus {
+  background: rgba(255,255,255,0.92);
+  border-color: rgba(133,14,53,0.45);
+  box-shadow: 0 0 0 3px rgba(133,14,53,0.10);
+  outline: none;
+}
+
+/* Warm scrollbar */
+[data-theme="aesthetic"] ::-webkit-scrollbar-track {
+  background: #FFF0F2;
+}
+[data-theme="aesthetic"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #EE6983, #850E35);
+  border-radius: 999px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer base {
+  html { @apply scroll-smooth; }
+  body {
+    @apply bg-surface-900 text-slate-100 antialiased;
+    font-family: "Inter", ui-sans-serif, system-ui;
+  }
+  * { @apply box-border; }
+  ::-webkit-scrollbar       { @apply w-1.5; }
+  ::-webkit-scrollbar-track { @apply bg-surface-800; }
+  ::-webkit-scrollbar-thumb { @apply bg-brand-600 rounded-full; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPONENTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer components {
+  .glass {
+    @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl
+           bg-brand-600 hover:bg-brand-500 active:bg-brand-700
+           font-semibold text-sm transition-all duration-200
+           shadow-glow-sm hover:shadow-glow
+           disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none;
+    color: rgb(var(--c-btn-text));
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl
+           border border-white/10 hover:border-brand-500/50 hover:bg-brand-600/10
+           text-slate-300 hover:text-white font-medium text-sm
+           transition-all duration-200;
+  }
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl bg-surface-600 border border-white/10
+           text-slate-100 placeholder-slate-500
+           focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500/50
+           transition-all duration-200;
+  }
+  .label  { @apply block text-sm font-medium text-slate-400 mb-1.5; }
+  .badge  { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium; }
+}

@@ -1,0 +1,2 @@
+# Drop your mobilenet_emotion_model.h5 file in this directory.
+# Full path: backend/app/ml/models/mobilenet_emotion_model.h5
