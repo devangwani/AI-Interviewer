@@ -47,7 +47,6 @@ npm-debug.log*
 yarn-error.log*
 
 # ── ML artefacts ─────────────────────────────────────────
-*.h5
 *.pkl
 *.pt
 *.onnx
