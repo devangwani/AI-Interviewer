@@ -192,7 +192,7 @@ class EmotionAnalyzer:
             )
             self._face_cascade = None
 
-    async def analyze_frame(self, b64_string: str) -> Optional[str]:
+    async def analyze_frame(self, b64_string: str) -> Optional[dict[str, float]]:
         """
         Full inference pipeline for a single video frame received from the browser.
 
@@ -205,14 +205,16 @@ class EmotionAnalyzer:
 
         Returns
         -------
-        str | None
-            The highest-confidence emotion label (e.g. "Happiness"), or None
-            if:
+        dict[str, float] | None
+            A dict mapping every emotion label to its softmax probability
+            (e.g. {"Happiness": 0.42, "Neutral": 0.31, "Sadness": 0.12, ...}).
+            Returns None if:
               • the frame could not be decoded, OR
               • no face was detected in the frame (candidate off-camera).
 
-            Callers should track how many frames returned None vs. a label to
-            compute a "presence rate" for the interview session.
+            Callers should accumulate the full probability dict across frames
+            so that secondary emotions (e.g. Happiness at 30% per frame) are
+            counted proportionally, not silenced by whichever emotion won top-1.
 
         Notes
         -----
@@ -295,9 +297,8 @@ class EmotionAnalyzer:
         -----
         1. Resize to 224 × 224 (MobileNetV2 default input size).
         2. Convert BGR → RGB   (OpenCV reads as BGR; Keras/TF expects RGB).
-        3. Scale pixel values from [0, 255] to [-1.0, 1.0]
-           using the formula:  x = (x / 127.5) - 1.0
-           This matches tf.keras.applications.mobilenet_v2.preprocess_input().
+        3. Scale pixel values from [0, 255] to [0.0, 1.0]  (rescale=1./255).
+           This matches the most common Keras ImageDataGenerator training setup.
 
         Returns
         -------
@@ -310,18 +311,18 @@ class EmotionAnalyzer:
         # Step 2 — BGR → RGB
         rgb = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
 
-        # Step 3 — Normalise to [-1, 1]
-        normalized = (rgb.astype(np.float32) / 127.5) - 1.0
+        # Step 3 — Normalise to [0, 1]  (matches ImageDataGenerator rescale=1./255)
+        normalized = rgb.astype(np.float32) / 255.0
 
         # Step 4 — Add batch dimension:  (224, 224, 3) → (1, 224, 224, 3)
         return np.expand_dims(normalized, axis=0)
 
-    def _run_inference(self, b64_string: str) -> Optional[str]:
+    def _run_inference(self, b64_string: str) -> Optional[dict[str, float]]:
         """
         Synchronous inference worker — executed in a thread pool.
 
-        Returns the top-1 emotion label, or None if no face was detected or
-        on any failure.
+        Returns a dict of {emotion_label: probability} for all 7 emotions,
+        or None if no face was detected or on any failure.
         """
         # ── Decode ────────────────────────────────────────────────────────────
         frame = self._decode_base64_frame(b64_string)
@@ -331,7 +332,7 @@ class EmotionAnalyzer:
         # ── Face detection gate ───────────────────────────────────────────────
         # If no face is found the candidate is off-camera.  Return None so the
         # caller can track this as an absent frame rather than counting it as
-        # "Neutral" emotion data.
+        # emotion data.
         if not self._has_face(frame):
             logger.debug("[EmotionAnalyzer] No face detected — frame skipped.")
             return None
@@ -344,16 +345,25 @@ class EmotionAnalyzer:
             # verbose=0 suppresses the Keras progress bar in logs
             predictions = self._model.predict(tensor, verbose=0)[0]  # shape: (7,)
 
-            # ── Argmax → label ────────────────────────────────────────────────
-            top_index = int(np.argmax(predictions))
-            top_label = EMOTION_LABELS[top_index]
+            # ── Build full probability dict ───────────────────────────────────
+            # Return ALL 7 probabilities so callers can accumulate the full
+            # distribution across frames instead of silencing secondary emotions
+            # by only counting the top-1 winner.
+            prob_dict = {
+                label: float(predictions[i])
+                for i, label in enumerate(EMOTION_LABELS)
+            }
 
-            logger.debug(
-                "[EmotionAnalyzer] Detected: %s (conf=%.3f)",
-                top_label,
-                float(predictions[top_index]),
+            # Log dominant + top-3 so the terminal shows varied detection
+            top_index = int(np.argmax(predictions))
+            top3 = sorted(prob_dict.items(), key=lambda x: x[1], reverse=True)[:3]
+            logger.info(
+                "[EmotionAnalyzer] → %s (%.1f%%) | top3: %s",
+                EMOTION_LABELS[top_index],
+                float(predictions[top_index]) * 100,
+                [(lbl, f"{p*100:.1f}%") for lbl, p in top3],
             )
-            return top_label
+            return prob_dict
 
         except Exception as exc:
             logger.error("[EmotionAnalyzer] Inference error: %s", exc)

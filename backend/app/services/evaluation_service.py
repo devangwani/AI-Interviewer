@@ -20,6 +20,7 @@ Responsibilities
 """
 
 import json
+import re
 from datetime import datetime
 from typing import Optional
 
@@ -28,6 +29,224 @@ from groq import AsyncGroq
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.config import settings
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Academic-integrity keyword detection
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Each tuple is (regex_pattern, human_readable_reason).
+# Patterns are matched case-insensitively against the full answer transcript.
+_AI_DISCLOSURE_PATTERNS: list[tuple[str, str]] = [
+    (r"i am a large language model",
+     "Candidate said 'I am a large language model'"),
+    (r"i'?m a large language model",
+     "Candidate said 'I'm a large language model'"),
+    (r"\bi am an ai\b",
+     "Candidate self-identified as an AI"),
+    (r"\bi'?m an ai\b",
+     "Candidate self-identified as an AI"),
+    (r"\bas an ai\b",
+     "Candidate used the phrase 'as an AI'"),
+    (r"\bas an artificial intelligence\b",
+     "Candidate used the phrase 'as an artificial intelligence'"),
+    (r"i was (?:created|developed|trained|built) by",
+     "Candidate described being created/trained by an organisation"),
+    (r"my (?:training|knowledge) (?:data|cutoff)",
+     "Candidate mentioned their 'training data' or 'knowledge cutoff'"),
+    (r"i cannot (?:browse|access) the internet",
+     "Candidate stated inability to access the internet"),
+    (r"i don'?t have (?:personal )?(?:experiences?|feelings?|consciousness|emotions?|opinions?)",
+     "Candidate denied having human qualities"),
+    (r"\b(?:chatgpt|gpt-?[34]|claude|gemini|bard|copilot)\b",
+     "Candidate mentioned an AI tool by name"),
+    (r"according to (?:chatgpt|claude|an?\s+ai|the ai)",
+     "Candidate attributed their answer to an AI tool"),
+    (r"i generated this",
+     "Candidate stated they generated their answer"),
+    (r"as (?:a|an) (?:language|ai|artificial)",
+     "Candidate began a sentence with an AI self-description"),
+]
+
+
+def _detect_ai_disclosure(transcript: str) -> list[dict]:
+    """
+    Keyword-scan a single answer transcript for explicit AI-disclosure phrases.
+    Returns a list of {reason, severity, excerpt} dicts — one per unique match.
+    """
+    text_lower = transcript.lower()
+    hits: list[dict] = []
+    seen_patterns: set[str] = set()
+
+    for pattern, reason in _AI_DISCLOSURE_PATTERNS:
+        if pattern in seen_patterns:
+            continue
+        m = re.search(pattern, text_lower)
+        if m:
+            seen_patterns.add(pattern)
+            # Grab ~60 chars around the match for the excerpt
+            start   = max(0, m.start() - 15)
+            end     = min(len(transcript), m.end() + 45)
+            excerpt = transcript[start:end].strip()
+            hits.append({
+                "reason":   reason,
+                "severity": "high",
+                "excerpt":  f"…{excerpt}…",
+            })
+    return hits
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Linguistic naturalness analyser
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Words that appear naturally in human speech but vanish when reading a script.
+_DISFLUENCY_WORDS  = {'um', 'uh', 'er', 'hmm', 'like', 'basically', 'right',
+                       'okay', 'well', 'anyway', 'alright'}
+_DISFLUENCY_PHRASES = ['i mean', 'you know', 'sort of', 'kind of']
+
+# Enumeration markers heavy in AI list-style writing.
+_ENUM_WORDS = ['firstly', 'secondly', 'thirdly', 'fourthly', 'additionally',
+               'furthermore', 'moreover', 'in addition', 'lastly', 'finally',
+               'to begin with', 'to start with']
+
+# (regex, short_label) — formal hedging phrases characteristic of LLM output.
+_HEDGING_PATTERNS = [
+    (r"it(?:'?s| is) important to (?:note|mention|understand|highlight|emphasize)",
+     "it is important to note/mention"),
+    (r"in (?:summary|conclusion|essence|brief)\b",
+     "in summary/conclusion"),
+    (r"it (?:should|must) be (?:noted|mentioned|understood|emphasize)",
+     "it should be noted"),
+    (r"to (?:summarize|summarise|sum up|conclude)\b",
+     "to summarize/conclude"),
+    (r"there are (?:several|multiple|various|many|a (?:number|few) of) (?:key |important |main |critical )?",
+     "there are several/multiple key…"),
+    (r"plays? a (?:crucial|key|vital|pivotal|important|significant|central) role",
+     "plays a crucial/key role"),
+    (r"is (?:crucial|essential|fundamental|vital|critical|imperative) (?:to|for|in|that)\b",
+     "is crucial/essential for"),
+    (r"one (?:key|important|crucial|significant|major|notable) (?:aspect|factor|consideration|point|benefit|advantage)",
+     "one key aspect/factor"),
+    (r"(?:overall|in general|generally speaking),",
+     "overall / in general"),
+    (r"(?:first and foremost|last but not least)\b",
+     "first and foremost / last but not least"),
+    (r"leverag(?:e|ing) (?:the power of|various|multiple|different)\b",
+     "leveraging the power of"),
+    (r"(?:robust|scalable|efficient|comprehensive|seamless|cutting-edge|state-of-the-art)\b",
+     "AI-typical adjective (robust/scalable/comprehensive/etc.)"),
+]
+
+# Personal-experience markers absent from generic AI answers.
+_PERSONAL_MARKERS = [
+    'i have worked', "i've worked", 'i worked on', 'i built', 'i developed',
+    'i implemented', 'in my experience', 'i once', 'my project', 'my team',
+    'when i was', 'i used to', 'personally', 'at my previous', 'i remember',
+    'i recall', 'my role', 'i had to',
+]
+
+
+def _analyze_answer_naturalness(transcript: str) -> dict:
+    """
+    Compute objective linguistic signals that distinguish AI-generated text
+    read aloud from natural human spoken responses.
+
+    Returns a dict with:
+      - word_count, disfluency_count, disfluency_pct
+      - enum_hits, hedging_hits, has_personal
+      - signals        : list[str] — human-readable descriptions of each flag
+      - suspicion_pts  : int — raw suspicion score (higher = more suspicious)
+      - naturalness    : int — 0–10 (10 = clearly natural, 0 = clearly AI-scripted)
+    """
+    text = transcript.strip()
+    if not text:
+        return {"word_count": 0, "signals": [], "suspicion_pts": 0, "naturalness": 10}
+
+    text_lower  = text.lower()
+    words       = text_lower.split()
+    word_count  = len(words)
+
+    if word_count < 15:            # too short to judge
+        return {"word_count": word_count, "signals": [], "suspicion_pts": 0, "naturalness": 10}
+
+    signals = []
+    pts     = 0   # suspicion points
+
+    # ── 1. Disfluency rate ────────────────────────────────────────────────────
+    d_count = sum(1 for w in words if w in _DISFLUENCY_WORDS)
+    d_count += sum(text_lower.count(p) for p in _DISFLUENCY_PHRASES)
+    d_pct   = round(d_count / word_count * 100, 1)
+
+    if word_count >= 40 and d_count == 0:
+        signals.append(
+            f"Zero spoken disfluencies over {word_count} words "
+            "(no 'um', 'uh', 'like', 'you know') — strongly indicates scripted reading"
+        )
+        pts += 3
+    elif word_count >= 60 and d_pct < 1.0:
+        signals.append(
+            f"Very low disfluency rate ({d_pct}%) for a {word_count}-word spoken answer"
+        )
+        pts += 1
+
+    # ── 2. Enumerative structure ──────────────────────────────────────────────
+    enum_hits = [w for w in _ENUM_WORDS if w in text_lower]
+    if re.search(r'\bfirst\b', text_lower) and re.search(r'\bsecond\b', text_lower):
+        enum_hits.append("first/second structure")
+    if len(enum_hits) >= 2:
+        signals.append(
+            f"Heavy enumerative structure ({', '.join(enum_hits[:4])}) "
+            "— characteristic of AI list-style writing read aloud"
+        )
+        pts += 1 + (1 if len(enum_hits) >= 3 else 0)
+
+    # ── 3. AI hedging / formal phrases ───────────────────────────────────────
+    hedging_hits = []
+    for pattern, label in _HEDGING_PATTERNS:
+        if re.search(pattern, text_lower):
+            hedging_hits.append(label)
+    if hedging_hits:
+        signals.append(
+            f"AI-characteristic formal phrases: {'; '.join(hedging_hits[:5])}"
+        )
+        pts += min(len(hedging_hits), 4)
+
+    # ── 4. Absence of personal anecdotes in long answers ─────────────────────
+    has_personal = any(m in text_lower for m in _PERSONAL_MARKERS)
+    if word_count >= 60 and not has_personal:
+        signals.append(
+            f"No personal anecdotes or first-person experiences in a "
+            f"{word_count}-word answer — typical of generic AI-generated content"
+        )
+        pts += 1
+
+    # ── 5. Sentence completeness (high = suspicious for unscripted speech) ────
+    sentences      = [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if len(s.strip().split()) >= 4]
+    if len(sentences) >= 4:
+        completeness   = sum(1 for s in sentences if len(s.split()) >= 7)
+        complete_pct   = round(completeness / len(sentences) * 100, 0)
+        if complete_pct >= 95:
+            signals.append(
+                f"Near-perfect sentence completeness ({int(complete_pct)}% of sentences are "
+                "full grammatical sentences) — natural speech typically contains "
+                "sentence fragments, restarts, and self-corrections"
+            )
+            pts += 1
+
+    naturalness = max(0, 10 - pts * 2)
+
+    return {
+        "word_count":     word_count,
+        "disfluency_count": d_count,
+        "disfluency_pct": d_pct,
+        "enum_hits":      enum_hits,
+        "hedging_hits":   hedging_hits,
+        "has_personal":   has_personal,
+        "signals":        signals,
+        "suspicion_pts":  pts,
+        "naturalness":    naturalness,
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -117,13 +336,13 @@ def _format_emotion_stats(
 
     lines.append(
         "Emotion distribution captured by computer-vision model "
-        "(face frames only — absent frames excluded):"
+        "(face frames only — absent frames excluded, values are probability-weighted):"
     )
-    for label, count in sorted_emotions:
-        pct = (count / total_face) * 100
-        lines.append(f"  {label:<12}: {count:>4} frames ({pct:.1f}%)")
+    for label, score in sorted_emotions:
+        pct = (score / total_face) * 100
+        lines.append(f"  {label:<12}: {pct:.1f}%")
 
-    lines.append(f"Total face-frames analysed: {total_face}")
+    lines.append(f"Total face-frames analysed: {face_frames}")
     return "\n".join(lines)
 
 
@@ -211,6 +430,105 @@ async def generate_report_card(
     face_frames     = sum(emotion_stats.values())
     absence_pct     = round(100 - presence_rate, 1)
 
+    # ── Academic integrity — keyword pre-scan + linguistic naturalness ────────
+    # Step 1: keyword regex — catches explicit AI self-disclosure phrases.
+    # Step 2: linguistic naturalness — computes concrete metrics (disfluency rate,
+    #         enumeration patterns, hedging phrases, personal anecdotes) that
+    #         expose AI-generated text even when no explicit phrases are used.
+    # Both sets of evidence are stated as FACTS in the LLM prompt so the model
+    # has hard data rather than being asked to "check for patterns" itself.
+    integrity_pre_flags: list[dict] = []
+    naturalness_results: list[dict] = []
+
+    for i, qa in enumerate(qa_history):
+        answer = qa.get("answer", "")
+
+        # Keyword check
+        kw_hits = _detect_ai_disclosure(answer)
+        for hit in kw_hits:
+            integrity_pre_flags.append({"question_index": i, **hit})
+
+        # Linguistic naturalness
+        nat = _analyze_answer_naturalness(answer)
+        naturalness_results.append(nat)
+
+    # Build integrity block for the LLM prompt
+    integrity_lines: list[str] = []
+
+    # ── Part A: keyword hits ──
+    if integrity_pre_flags:
+        integrity_lines.append(
+            "PART A — Explicit AI-disclosure keywords (automated phrase scan — treat as DEFINITIVE evidence):"
+        )
+        for flag in integrity_pre_flags:
+            integrity_lines.append(
+                f"  Q{flag['question_index'] + 1} [HIGH]: {flag['reason']}  —  "
+                f"excerpt: \"{flag['excerpt']}\""
+            )
+    else:
+        integrity_lines.append(
+            "PART A — No explicit AI-disclosure keywords detected in any answer."
+        )
+
+    integrity_lines.append("")
+
+    # ── Part B: per-answer linguistic naturalness metrics ──
+    integrity_lines.append(
+        "PART B — Per-answer linguistic naturalness analysis (computed from transcript text):"
+    )
+    integrity_lines.append(
+        "  [Scale: naturalness 10 = clearly natural human speech | 0 = clearly AI-scripted]"
+    )
+    overall_suspicion = 0
+    for i, nat in enumerate(naturalness_results):
+        level = (
+            "HIGHLY SUSPICIOUS" if nat["naturalness"] <= 2
+            else "SUSPICIOUS"    if nat["naturalness"] <= 4
+            else "BORDERLINE"    if nat["naturalness"] <= 6
+            else "NATURAL"
+        )
+        overall_suspicion += nat["suspicion_pts"]
+        integrity_lines.append(
+            f"\n  Q{i + 1} — Naturalness: {nat['naturalness']}/10  [{level}]"
+            f"  |  Words: {nat['word_count']}  |  Disfluencies: {nat['disfluency_count']} ({nat['disfluency_pct']}%)"
+        )
+        if nat["signals"]:
+            for sig in nat["signals"]:
+                integrity_lines.append(f"    ⚑ {sig}")
+        else:
+            integrity_lines.append("    ✓ No suspicious linguistic signals detected")
+
+    integrity_lines.append("")
+    integrity_lines.append(
+        "MANDATORY FLAGGING RULES — you MUST apply these regardless of other judgements:"
+    )
+    integrity_lines.append(
+        "  • Naturalness ≤ 2 on ANY answer  →  flag that answer as HIGH severity"
+    )
+    integrity_lines.append(
+        "  • Naturalness ≤ 4 on ANY answer  →  flag that answer as MEDIUM severity minimum"
+    )
+    integrity_lines.append(
+        "  • Zero disfluencies over 40+ words  →  flag as MEDIUM severity minimum"
+    )
+    integrity_lines.append(
+        "  • ANY keyword hit from Part A  →  flag as HIGH severity"
+    )
+    integrity_lines.append(
+        "  • If MULTIPLE answers share the same low-naturalness pattern  →  elevate to HIGH risk"
+    )
+    integrity_lines.append(
+        "  • Absence of explicit AI phrases does NOT mean the candidate is innocent."
+    )
+    integrity_lines.append(
+        "    Candidates routinely copy AI-generated text and read it without disclosing the source."
+    )
+    integrity_lines.append(
+        "    Your default assumption when signals align must be: FLAGGED."
+    )
+
+    integrity_block = "\n".join(integrity_lines)
+
     # ── Build the Q&A transcript section ─────────────────────────────────────
     history_text = "\n\n".join([
         f"Q{i + 1}: {qa['question']}\nA{i + 1}: {qa.get('answer', '(no answer given)')}"
@@ -251,14 +569,17 @@ async def generate_report_card(
 
     # ── System prompt ─────────────────────────────────────────────────────────
     system_prompt = (
-        f"You are a senior technical recruiter AND a behavioural scientist who just "
-        f"completed a {interview_type} interview for a {job_role} position. "
-        "You have access to THREE sources of signal:\n"
+        f"You are a senior technical recruiter, a behavioural scientist, AND an "
+        f"academic integrity analyst who just completed a {interview_type} interview "
+        f"for a {job_role} position. "
+        "You have access to FOUR sources of signal:\n"
         "  1. The candidate's spoken answers (text transcript).\n"
         "  2. Real-time facial emotion data captured by a computer-vision model "
         "     during the interview (only frames where a face was detected).\n"
         "  3. Candidate camera presence data (what fraction of the session the "
-        "     candidate was actually visible on camera).\n\n"
+        "     candidate was actually visible on camera).\n"
+        "  4. Academic integrity signals — automated phrase matching PLUS your own "
+        "     analysis of whether answers appear to be read from AI-generated scripts.\n\n"
         "Combine ALL signals to produce a deeply insightful, fair, and actionable "
         "Report Card.  Absence from camera is a behavioural signal and should be "
         "treated as such — it may indicate distraction, disengagement, or technical "
@@ -279,10 +600,35 @@ Qualitative visual confidence summary: {visual_summary}
 === ABSENCE INSTRUCTION ===
 {absence_instruction}
 
+=== ACADEMIC INTEGRITY ANALYSIS ===
+{integrity_block}
+
+Integrity task instructions:
+The naturalness metrics in PART B above are OBJECTIVE measurements computed from
+the transcript text — they are not your opinion, they are facts.  Use them as your
+primary evidence.  Apply the MANDATORY FLAGGING RULES exactly as stated.
+
+Additionally check for:
+  • Cross-answer consistency: are ALL answers equally polished with zero disfluencies?
+    A human candidate always shows variation — some answers are rough, some are fluent.
+    Uniformly perfect structure across all questions strongly suggests AI use.
+  • Vocabulary level shift: does the vocabulary suddenly become significantly more formal
+    or technical than what would be expected from the candidate's other signals?
+  • Suspiciously comprehensive coverage: does every answer cover every possible subtopic
+    of the question with no gaps or "I'm not sure about that" moments?
+
+When computing risk_level for integrity_report:
+  "high"   — any keyword hit, OR naturalness ≤ 2 on any answer,
+             OR multiple answers all at naturalness ≤ 4
+  "medium" — naturalness ≤ 4 on any single answer, OR zero disfluencies across 2+ answers
+  "low"    — naturalness 5–6 with minor signals but no definitive evidence
+  "none"   — naturalness ≥ 7 on all answers, no signals detected
+
 === YOUR TASK ===
 Act as the final multimodal judge.  Combine the technical accuracy of the
-candidate's words, their visual confidence signals, AND their camera presence
-data to produce a highly detailed, EXPLAINABLE Report Card.
+candidate's words, their visual confidence signals, their camera presence
+data, AND the academic integrity signals to produce a highly detailed,
+EXPLAINABLE Report Card.
 
 For every sub-score you assign, you MUST provide a rubric breakdown — a list
 of specific criteria that were evaluated, whether the candidate met each one,
@@ -353,7 +699,21 @@ Return a JSON object with EXACTLY these keys:
       "score":    <float 0-10>,
       "feedback": <string — 2-3 sentences: what was strong, what was weak, what the emotion data showed>
     }}
-  ]
+  ],
+
+  "integrity_report": {{
+    "flagged":    <true | false — true if ANY answer shows clear AI-generation signals>,
+    "risk_level": <"high" | "medium" | "low" | "none">,
+    "flags": [
+      {{
+        "question_index": <int, 0-based>,
+        "reason":   <string — specific reason this answer was flagged>,
+        "severity": <"high" | "medium" | "low">,
+        "excerpt":  <string — the suspicious portion of the answer, max ~80 chars>
+      }}
+    ],
+    "summary": <string — 1-2 sentences: overall integrity verdict and what evidence was found>
+  }}
 }}
 """
 
@@ -396,6 +756,31 @@ Return a JSON object with EXACTLY these keys:
                 "interpretation":      "Emotion data unavailable.",
             },
             "per_question": [],
+            "integrity_report": {
+                "flagged": bool(integrity_pre_flags) or any(
+                    n.get("naturalness", 10) <= 4 for n in naturalness_results
+                ),
+                "risk_level": (
+                    "high"   if integrity_pre_flags or any(n.get("naturalness", 10) <= 2 for n in naturalness_results)
+                    else "medium" if any(n.get("naturalness", 10) <= 4 for n in naturalness_results)
+                    else "none"
+                ),
+                "flags": integrity_pre_flags + [
+                    {
+                        "question_index": i,
+                        "reason":   "Low linguistic naturalness score — possible AI-generated script",
+                        "severity": "high" if n["naturalness"] <= 2 else "medium",
+                        "excerpt":  "; ".join(n["signals"][:2]) if n["signals"] else "",
+                    }
+                    for i, n in enumerate(naturalness_results)
+                    if n.get("naturalness", 10) <= 4
+                ],
+                "summary": (
+                    "Report parsing failed. Automated analysis detected integrity concerns — manual review required."
+                    if (integrity_pre_flags or any(n.get("naturalness", 10) <= 4 for n in naturalness_results))
+                    else "Report parsing failed. No automated integrity concerns were detected."
+                ),
+            },
         }
 
     # Inject presence_rate as a fact — never trust the LLM to compute this.

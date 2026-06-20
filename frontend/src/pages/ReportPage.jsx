@@ -196,6 +196,7 @@ export default function ReportPage() {
     candidate_name,
     presence_rate,
     absence_warning,
+    integrity_report = null,
   } = report;
 
   // presence_rate is 0–100 (percentage of frames where face was detected).
@@ -278,6 +279,90 @@ export default function ReportPage() {
                     ? absence_warning
                     : `The candidate's face was detected in only ${presence_rate.toFixed(1)}% of video frames. Visual confidence scores may not reflect the candidate's true demeanour.`}
                 </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Academic Integrity Warning ─────────────────────── */}
+        {integrity_report && (
+          <div className={`rounded-xl border px-5 py-4 animate-fade-in ${
+            integrity_report.flagged
+              ? integrity_report.risk_level === "high"
+                ? "bg-red-500/10 border-red-500/30"
+                : "bg-amber-500/10 border-amber-500/30"
+              : "bg-emerald-500/5 border-emerald-500/20"
+          }`}>
+            <div className="flex items-start gap-3">
+              {integrity_report.flagged ? (
+                <svg className={`w-5 h-5 mt-0.5 shrink-0 ${integrity_report.risk_level === "high" ? "text-red-400" : "text-amber-400"}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 mt-0.5 shrink-0 text-emerald-400"
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-1">
+                  <p className={`text-sm font-semibold ${
+                    integrity_report.flagged
+                      ? integrity_report.risk_level === "high" ? "text-red-300" : "text-amber-300"
+                      : "text-emerald-300"
+                  }`}>
+                    {integrity_report.flagged ? "Academic Integrity Warning" : "Integrity Check Passed"}
+                  </p>
+                  {integrity_report.flagged && (
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+                      integrity_report.risk_level === "high"
+                        ? "bg-red-500/20 border-red-500/40 text-red-300"
+                        : integrity_report.risk_level === "medium"
+                        ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                        : "bg-yellow-500/20 border-yellow-500/40 text-yellow-300"
+                    }`}>
+                      {(integrity_report.risk_level ?? "").toUpperCase()} RISK
+                    </span>
+                  )}
+                </div>
+
+                <p className={`text-xs leading-relaxed mb-3 ${
+                  integrity_report.flagged
+                    ? integrity_report.risk_level === "high" ? "text-red-200/80" : "text-amber-200/80"
+                    : "text-emerald-200/70"
+                }`}>
+                  {integrity_report.summary}
+                </p>
+
+                {integrity_report.flagged && integrity_report.flags && integrity_report.flags.length > 0 && (
+                  <div className="space-y-2">
+                    {integrity_report.flags.map((flag, i) => (
+                      <div key={i} className={`rounded-lg p-3 border ${
+                        flag.severity === "high"
+                          ? "bg-red-500/8 border-red-500/25"
+                          : "bg-amber-500/8 border-amber-500/25"
+                      }`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-xs font-bold ${flag.severity === "high" ? "text-red-400" : "text-amber-400"}`}>
+                            Q{flag.question_index + 1}
+                          </span>
+                          <span className={`text-xs ${flag.severity === "high" ? "text-red-300" : "text-amber-300"}`}>
+                            {flag.reason}
+                          </span>
+                        </div>
+                        {flag.excerpt && (
+                          <p className="text-xs text-slate-400 font-mono italic leading-relaxed">
+                            "{flag.excerpt}"
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

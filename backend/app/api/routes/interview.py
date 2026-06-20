@@ -431,14 +431,19 @@ async def interview_websocket(
     qa_history:             list[dict] = []
     active_question_text:   str        = ""   # text of the question currently being answered
 
-    # Phase 3C — running emotion counter for the entire session.
-    # Structure: {"Happiness": 15, "Neutral": 42, "Fear": 5, ...}
-    # Only frames where a face was detected are counted here.
-    emotion_stats: dict[str, int] = {}
+    # Phase 3C — running emotion accumulator for the entire session.
+    # Structure: {"Happiness": 12.3, "Neutral": 18.9, "Fear": 2.1, ...}
+    # Values are the SUM of softmax probabilities across all face-detected frames,
+    # not raw frame counts.  This ensures secondary emotions (e.g. Happiness at
+    # 30% in a frame where Neutral at 45% "wins") are proportionally represented
+    # in the final distribution instead of being silenced by top-1 voting.
+    emotion_stats: dict[str, float] = {}
 
     # Total video frames received (with or without a face).  Used to compute
-    # presence_rate = sum(emotion_stats.values()) / total_video_frames.
+    # presence_rate = face_frame_count / total_video_frames.
     total_video_frames: int = 0
+    # Frames where a face was actually detected (denominator for emotion %).
+    face_frame_count:   int = 0
 
     # ── Generate and send the first question ─────────────────────────────────
     # Always generate dynamically — never use pre-stored text — so every session
@@ -544,13 +549,17 @@ async def interview_websocket(
                 if b64_frame and emotion_analyzer._loaded:
                     total_video_frames += 1
                     # analyze_frame() returns None when no face is detected.
-                    # Only count frames where a face was actually present so
-                    # that absent/off-camera frames don't inflate "Neutral".
-                    detected_emotion = await emotion_analyzer.analyze_frame(b64_frame)
-                    if detected_emotion:
-                        emotion_stats[detected_emotion] = (
-                            emotion_stats.get(detected_emotion, 0) + 1
-                        )
+                    # When a face is present it returns a dict of all 7 emotion
+                    # probabilities (e.g. {"Neutral": 0.45, "Happiness": 0.30, ...}).
+                    # Accumulate the FULL distribution so secondary emotions are
+                    # counted proportionally — not silenced by top-1 voting.
+                    prob_dict = await emotion_analyzer.analyze_frame(b64_frame)
+                    if prob_dict is not None:
+                        face_frame_count += 1
+                        for label, prob in prob_dict.items():
+                            emotion_stats[label] = (
+                                emotion_stats.get(label, 0.0) + prob
+                            )
                 continue    # video_frame is fire-and-forget; no response needed
 
             # ── END_ANSWER: candidate finished speaking ───────────────────────
@@ -619,9 +628,12 @@ async def interview_websocket(
 
                     # presence_stats lets the LLM (and report page) know how
                     # often the candidate was actually on camera.
+                    # Use the separate face_frame_count (integer) rather than
+                    # sum(emotion_stats.values()) which is now a float probability
+                    # sum after the probability-accumulation change.
                     presence_stats = {
-                        "total_frames":    total_video_frames,
-                        "frames_with_face": sum(emotion_stats.values()),
+                        "total_frames":     total_video_frames,
+                        "frames_with_face": face_frame_count,
                     }
 
                     # Pass Q&A transcript, CNN emotion stats, AND presence data
