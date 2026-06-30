@@ -30,7 +30,7 @@ async def parse_resume(file_bytes: bytes) -> dict:
 
     client = get_groq_client()
     response = await client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="openai/gpt-oss-120b",
         messages=[
             {
                 "role": "system",

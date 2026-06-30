@@ -26,7 +26,7 @@ async def generate_interview_questions(
         "No additional commentary."
     )
     response = await client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="openai/gpt-oss-120b",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7,
         max_tokens=1024,
@@ -229,7 +229,7 @@ async def generate_next_question(
         )
 
     response = await client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="openai/gpt-oss-120b",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user",   "content": user_prompt},
@@ -257,7 +257,7 @@ async def evaluate_answer(
         '  "verdict": <"strong" | "acceptable" | "weak">'
     )
     response = await client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="openai/gpt-oss-120b",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
         max_tokens=512,
