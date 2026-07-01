@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Project Execution Report — AI Interview Framework</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Georgia:ital,wght@0,400;1,400&family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12pt;
+    line-height: 1.8;
+    color: #1a1a1a;
+    background: #fff;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto 0;
+    padding: 25mm 25mm 20mm 30mm;
+    background: #fff;
+    position: relative;
+  }
+
+  @media print {
+    body { background: #fff; }
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0;
+      padding: 25mm 25mm 20mm 30mm;
+      page-break-after: always;
+    }
+    .no-print { display: none; }
+    h1, h2, h3 { page-break-after: avoid; }
+    table { page-break-inside: avoid; }
+  }
+
+  /* Cover page */
+  .cover {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 270mm;
+    text-align: center;
+  }
+  .cover .institution {
+    font-size: 13pt;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #444;
+    margin-bottom: 50px;
+  }
+  .cover .main-title {
+    font-size: 26pt;
+    font-weight: bold;
+    line-height: 1.3;
+    margin-bottom: 10px;
+    color: #111;
+  }
+  .cover .subtitle {
+    font-size: 14pt;
+    color: #555;
+    margin-bottom: 50px;
+    font-style: italic;
+  }
+  .cover .divider {
+    width: 80px;
+    height: 3px;
+    background: #1a1a1a;
+    margin: 0 auto 40px;
+  }
+  .cover .meta-table {
+    text-align: left;
+    border-collapse: collapse;
+    font-size: 11pt;
+    width: 90%;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+  .cover .meta-table td {
+    padding: 7px 14px;
+    vertical-align: top;
+  }
+  .cover .meta-table td:first-child {
+    font-weight: bold;
+    color: #333;
+    width: 120px;
+    border-right: 2px solid #ccc;
+  }
+  .cover .meta-table td:last-child {
+    color: #222;
+  }
+
+  /* Headings */
+  h1 {
+    font-size: 16pt;
+    font-weight: bold;
+    margin-bottom: 14px;
+    margin-top: 28px;
+    border-bottom: 2px solid #1a1a1a;
+    padding-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  h2 {
+    font-size: 13pt;
+    font-weight: bold;
+    margin-top: 22px;
+    margin-bottom: 10px;
+    color: #111;
+  }
+  h3 {
+    font-size: 12pt;
+    font-weight: bold;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    color: #333;
+    font-style: italic;
+  }
+
+  p {
+    margin-bottom: 11px;
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  ul, ol {
+    margin-left: 24px;
+    margin-bottom: 11px;
+  }
+  li {
+    margin-bottom: 4px;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 11pt;
+  }
+  th {
+    background: #1a1a1a;
+    color: #fff;
+    padding: 7px 10px;
+    text-align: left;
+    font-weight: 600;
+  }
+  td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #ddd;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td {
+    background: #f7f7f7;
+  }
+
+  code {
+    font-family: 'Courier New', monospace;
+    font-size: 10.5pt;
+    background: #f2f2f2;
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  .callout {
+    border-left: 4px solid #1a1a1a;
+    background: #f8f8f8;
+    padding: 10px 16px;
+    margin: 14px 0;
+    font-size: 11pt;
+  }
+
+  .page-num {
+    position: absolute;
+    bottom: 15mm;
+    right: 25mm;
+    font-size: 10pt;
+    color: #888;
+  }
+
+  .toc-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 5px 0;
+    font-size: 12pt;
+  }
+  .toc-item .dots {
+    flex: 1;
+    border-bottom: 1px dotted #888;
+    margin: 0 8px;
+    position: relative;
+    top: -3px;
+  }
+
+  .download-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #1a1a1a;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 4px;
+    z-index: 9999;
+  }
+  .download-btn:hover { background: #333; }
+
+  .section-break { height: 18px; }
+  .fig-caption {
+    text-align: center;
+    font-size: 10.5pt;
+    color: #555;
+    font-style: italic;
+    margin-top: -6px;
+    margin-bottom: 14px;
+  }
+
+  .arch-box {
+    border: 1.5px solid #ccc;
+    padding: 14px 18px;
+    margin: 14px 0;
+    font-size: 10.5pt;
+    font-family: 'Courier New', monospace;
+    background: #fafafa;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+</style>
+</head>
+<body>
+
+<button class="download-btn no-print" onclick="window.print()">&#8659; Download PDF</button>
+
+<!-- ═══════════════════════════════════════════════ PAGE 1 — COVER ═══════════════════════════════════════════════ -->
+<div class="page">
+  <div class="cover">
+    <div class="institution">Engineering Capstone Project &mdash; 2025&ndash;2026</div>
+    <div class="main-title">Real-Time Multimodal AI<br>Interview Framework</div>
+    <div class="subtitle">Project Execution Report</div>
+    <div class="divider"></div>
+    <table class="meta-table">
+      <tr><td>Author</td><td>Devang Wani</td></tr>
+      <tr><td>Contact</td><td>majorproject1907@gmail.com</td></tr>
+      <tr><td>Repository</td><td>github.com/devangwani/AI-Interviewer (private)</td></tr>
+      <tr><td>Date</td><td>July 1, 2026</td></tr>
+      <tr><td>Technology</td><td>React 18 &bull; FastAPI &bull; MongoDB Atlas &bull; Groq LLM &bull; Deepgram &bull; MobileNetV2</td></tr>
+      <tr><td>Status</td><td>Fully functional &mdash; all phases complete</td></tr>
+    </table>
+  </div>
+  <div class="page-num">1</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ PAGE 2 — TOC + ABSTRACT ═══════════════════════════════════════════════ -->
+<div class="page">
+  <h1>Table of Contents</h1>
+  <div class="toc-item"><span>1. Introduction &amp; Problem Statement</span><span class="dots"></span><span>3</span></div>
+  <div class="toc-item"><span>2. System Architecture</span><span class="dots"></span><span>3</span></div>
+  <div class="toc-item"><span>3. Technology Stack</span><span class="dots"></span><span>4</span></div>
+  <div class="toc-item"><span>4. Phase 1 — Backend Foundation</span><span class="dots"></span><span>4</span></div>
+  <div class="toc-item"><span>5. Phase 2 — Frontend Development</span><span class="dots"></span><span>5</span></div>
+  <div class="toc-item"><span>6. Phase 3A — Real-Time WebSocket Interview Engine</span><span class="dots"></span><span>5</span></div>
+  <div class="toc-item"><span>7. Phase 3B — Scoring and Report Card System</span><span class="dots"></span><span>6</span></div>
+  <div class="toc-item"><span>8. Phase 3C — Emotion Analysis via CNN</span><span class="dots"></span><span>6</span></div>
+  <div class="toc-item"><span>9. Feature: Resume Parser and Contextual Questions</span><span class="dots"></span><span>7</span></div>
+  <div class="toc-item"><span>10. Feature: Dual-Role System (Recruiter &amp; Candidate)</span><span class="dots"></span><span>7</span></div>
+  <div class="toc-item"><span>11. Feature: Academic Integrity Detection</span><span class="dots"></span><span>8</span></div>
+  <div class="toc-item"><span>12. UI/UX — Three-Mode Theming</span><span class="dots"></span><span>8</span></div>
+  <div class="toc-item"><span>13. Challenges Encountered and How They Were Resolved</span><span class="dots"></span><span>9</span></div>
+  <div class="toc-item"><span>14. Conclusion</span><span class="dots"></span><span>10</span></div>
+
+  <div class="section-break"></div>
+
+  <h1>Abstract</h1>
+  <p>This document is the project execution report for the Real-Time Multimodal AI Interview Framework, an engineering capstone built entirely from scratch over several development phases. The system is designed to conduct, evaluate, and score job interviews without requiring a human recruiter to be present. It integrates live speech recognition, facial emotion tracking, and a large language model to generate adaptive questions, assess candidate responses in real time, and produce a detailed performance report card at the end of each session.</p>
+
+  <p>The project was developed with a strict resource constraint — the development machine has 8 GB RAM and runs Windows 11 — which directly influenced every architectural decision, from choosing cloud-hosted services over local containers to running a lightweight CPU-only emotion model rather than a GPU-heavy deep learning pipeline. Despite these limitations, the final system is fully functional end-to-end and handles audio streaming, video frame analysis, LLM inference, and asynchronous data storage simultaneously within a single WebSocket session.</p>
+
+  <p>The report documents all phases of development, explains how each subsystem was implemented, discusses the most significant technical challenges encountered along the way, and describes how those challenges were diagnosed and resolved. It also covers the additional features developed after the initial build — including resume parsing, a recruiter scheduling portal, and an AI integrity detection system — which together bring the platform closer to a production-grade hiring tool.</p>
+
+  <div class="page-num">2</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ PAGE 3 — INTRO + ARCHITECTURE ═══════════════════════════════════════════════ -->
+<div class="page">
+  <h1>1. Introduction and Problem Statement</h1>
+
+  <p>Job interviews are one of the most resource-intensive steps in any hiring process. A company with fifty open roles needs recruiters available to conduct hundreds of interviews, coordinate schedules, and produce consistent evaluations — a process that is expensive, slow, and often subjective. Entry-level positions in particular suffer from a mismatch: candidates need practice and feedback, but companies cannot afford to spend recruiter time on every application that comes in.</p>
+
+  <p>This project was built to address that gap. The idea is not to replace human judgment entirely, but to create an automated first-round screening tool that gives candidates a structured, fair interview experience and provides recruiters with a detailed, data-backed report they can review at their convenience. Rather than simply asking pre-set questions and grading text responses, the system conducts a genuinely dynamic interview — it listens to what the candidate says, adjusts follow-up questions based on the answers, and simultaneously tracks vocal and facial behavioral signals to build a richer picture of how the candidate performed.</p>
+
+  <p>The system was built as a capstone engineering project, with a focus on using real production-grade APIs and tools rather than mock data or simulated outputs. Every component — the speech-to-text pipeline, the language model integration, the CNN-based emotion classifier, the report card generator — produces real results from real inputs.</p>
+
+  <h1>2. System Architecture</h1>
+
+  <p>The application is split into two main processes: a React frontend running on port 5173 via Vite, and a FastAPI backend running on port 8000 via Uvicorn. The frontend proxies all API calls through Vite's dev server to avoid CORS issues in development, so from the browser's perspective there is only one origin.</p>
+
+  <p>The most important architectural decision in the entire project is the single-WebSocket design. Rather than using separate channels for audio, video, and messaging, everything flows through one WebSocket connection per interview session, identified by a session UUID. This keeps connection state simple and avoids the race conditions that arise when multiple channels need to be synchronized.</p>
+
+<div class="arch-box">┌─────────────────────────────────────────────────────────────┐
+│                     BROWSER (React 18)                      │
+│  InterviewPage → useWebRTC → getUserMedia (cam + mic)       │
+│  useInterviewWS → WebSocket → ws://localhost:8000/ws/{id}   │
+│    ├── Audio PCM frames  ──────────────────────────────────▶│
+│    ├── Base64 JPEG frames ─────────────────────────────────▶│
+│    └── end_answer JSON ────────────────────────────────────▶│
+│                           ◀── ai_question / transcript      │
+└─────────────────────────────────────────────────────────────┘
+               │  WebSocket  │  REST (Firebase JWT)
+               ▼             ▼
+┌──────────── FastAPI / Uvicorn (port 8000) ─────────────────┐
+│  WebSocket handler ──▶ Deepgram (real-time STT stream)      │
+│                    ──▶ MobileNetV2 CNN (emotion, per frame) │
+│                    ──▶ Groq LLM (next question generation)  │
+│  REST routes       ──▶ MongoDB Atlas (Motor async driver)   │
+│                    ──▶ Firebase Admin SDK (token verify)    │
+└─────────────────────────────────────────────────────────────┘</div>
+  <p class="fig-caption">Figure 1 — End-to-end data flow through the WebSocket engine</p>
+
+  <p>During an interview session, the WebSocket handler on the backend simultaneously forwards raw audio bytes to Deepgram for transcription, decodes incoming JPEG frames and runs them through the MobileNetV2 emotion model, and waits for the candidate to signal they have finished answering. When the end-answer event arrives, the accumulated transcript and emotion data for that question are passed to the Groq LLM, which both evaluates the answer and generates the next question. At the end of all questions, the complete data package goes through the evaluation service to produce the final report card, which is then saved to MongoDB.</p>
+
+  <div class="page-num">3</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ PAGE 4 — TECH STACK + PHASE 1 ═══════════════════════════════════════════════ -->
+<div class="page">
+  <h1>3. Technology Stack</h1>
+
+  <table>
+    <tr><th>Layer</th><th>Technology</th><th>Reason for Choice</th></tr>
+    <tr><td>Frontend</td><td>React 18 + Vite, Zustand, Tailwind CSS, React Router v6</td><td>Fast dev server, minimal bundle overhead, simple global state</td></tr>
+    <tr><td>Backend</td><td>FastAPI + Uvicorn (Python 3.10)</td><td>Native async support, WebSocket built-in, automatic OpenAPI docs</td></tr>
+    <tr><td>Database</td><td>MongoDB Atlas via Motor async driver</td><td>Cloud-hosted — no local daemon needed; flexible document schema</td></tr>
+    <tr><td>Auth</td><td>Firebase Authentication (Google + email/password)</td><td>Zero backend auth logic; JWT tokens auto-verified server-side</td></tr>
+    <tr><td>LLM</td><td>Groq API — model <code>openai/gpt-oss-120b</code></td><td>Sub-200ms inference latency; no local GPU required</td></tr>
+    <tr><td>Speech-to-Text</td><td>Deepgram Nova-2 (real-time WebSocket)</td><td>Streaming transcription; returns final transcripts with speaker diarization</td></tr>
+    <tr><td>Text-to-Speech</td><td>Web Speech API (<code>window.speechSynthesis</code>)</td><td>Browser-native, zero latency, free — no audio round-trip to server</td></tr>
+    <tr><td>Emotion Model</td><td>MobileNetV2 fine-tuned on RAF-DB (7 classes)</td><td>Runs on CPU in ~30ms per frame; lightweight and self-contained</td></tr>
+    <tr><td>Face Detection</td><td>OpenCV Haar Cascade</td><td>Zero new dependencies; fast enough for 224×224 frames</td></tr>
+    <tr><td>PDF Parsing</td><td>pdfplumber 0.11.0</td><td>Reliable text extraction from most PDF layouts without Ghostscript</td></tr>
+    <tr><td>Audio Analysis</td><td>librosa + soundfile</td><td>Speech rate, pause analysis on recorded answer audio</td></tr>
+  </table>
+
+  <h1>4. Phase 1 — Backend Foundation</h1>
+
+  <p>The first phase of the project established everything the backend needs to operate: the application skeleton, database connection, authentication middleware, and the core data models. The FastAPI app is organized around a standard layered structure — <code>app/api/routes/</code> for HTTP and WebSocket handlers, <code>app/services/</code> for business logic, <code>app/models/</code> for Pydantic schemas, and <code>app/core/</code> for configuration.</p>
+
+  <p>Database connectivity uses the Motor async driver for MongoDB. The connection is initialized once at application startup via a <code>lifespan</code> context manager so the same connection pool is shared across all requests. Using a cloud-hosted database (MongoDB Atlas) was a deliberate constraint imposed by the 8 GB RAM limit on the development machine — running a local MongoDB instance alongside the FastAPI server, the React dev server, and the TensorFlow emotion model would have pushed memory usage beyond what the machine could handle comfortably.</p>
+
+  <p>Authentication is handled entirely by Firebase. When a user signs in on the frontend, Firebase issues a JWT token which the Axios client automatically attaches to every subsequent API request via an interceptor. On the backend, a FastAPI dependency (<code>get_current_user</code> in <code>app/api/deps.py</code>) validates the token using the Firebase Admin SDK and returns the user's UID and email. This means the backend never stores passwords and has no session management of its own — which simplifies the code considerably and eliminates an entire category of security vulnerabilities.</p>
+
+  <p>The interview data model was designed to accommodate the full lifecycle of an interview session. An interview document holds the candidate's UID, the interview configuration (role, type, difficulty, number of questions), an array of answer objects (one per question, each with the transcript, emotion data, and per-question scores), and eventually the full report card. Because MongoDB's document model allows embedding, there is no need for a separate answers collection or complex joins.</p>
+
+  <div class="page-num">4</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ PAGE 5 — PHASE 2 + PHASE 3A ═══════════════════════════════════════════════ -->
+<div class="page">
+  <h1>5. Phase 2 — Frontend Development</h1>
+
+  <p>The frontend was bootstrapped with Vite rather than Create React App because Vite's development server starts significantly faster and its hot module replacement is noticeably more responsive during rapid iteration. Global state is managed with Zustand, chosen over Redux because the application's state needs are simple enough that the added boilerplate of Redux would have been counterproductive. Tailwind CSS handles styling, configured with custom CSS variable tokens so that the entire visual theme can be switched at runtime without changing any JSX.</p>
+
+  <p>The routing structure reflects the natural flow a user would take through the application. The entry point is the login page, where candidates or recruiters authenticate with Google or email and password through Firebase. On first login, the application detects that no role has been assigned and immediately redirects to a role selection screen where the user picks either Candidate or Recruiter. This choice is saved to MongoDB via a <code>PATCH /auth/me/role</code> request and subsequently embedded in the user's Firebase profile so it can be read without a database call. After role selection, users land on a role-appropriate dashboard.</p>
+
+  <p>A <code>ProtectedRoute</code> wrapper handles both authentication and role enforcement — it redirects unauthenticated users to the login page and users without a role to the role selection page. This keeps the guards centralized rather than scattered across every page component.</p>
+
+  <h1>6. Phase 3A — Real-Time WebSocket Interview Engine</h1>
+
+  <p>This was the most technically demanding phase of the project. The goal was to stream both audio and video from the browser to the backend in real time, run speech recognition and emotion analysis simultaneously, and then use the combined output to drive a conversation with the LLM. All of this needed to happen through a single WebSocket connection to keep the system manageable.</p>
+
+  <p>On the frontend, two custom React hooks coordinate the media pipeline. The <code>useWebRTC</code> hook handles <code>getUserMedia</code> to acquire camera and microphone access, sets up a canvas element that captures video frames as JPEG images at a regular interval, and creates a ScriptProcessor node in the Web Audio API to capture raw audio PCM data from the microphone. The <code>useInterviewWS</code> hook owns the WebSocket connection itself: it opens the connection, sends audio chunks and video frames as they arrive, listens for server-sent messages, and drives the interview phase state machine.</p>
+
+  <p>Speech recognition is handled server-side by Deepgram's Nova-2 model. One implementation detail here is particularly important and cost the team a debugging session to get right: the Deepgram connection is opened lazily — that is, it is only initiated when the first audio byte arrives for a given question, not at the start of the session. The reason is that when the AI reads the question aloud via the Web Speech API, the microphone is open but the candidate is not yet speaking. If Deepgram is connected upfront, it times out waiting for speech during TTS playback. Opening the connection on first audio arrival avoids this completely.</p>
+
+  <p>On the video side, the browser sends Base64-encoded JPEG frames over the WebSocket. The backend decodes each frame, runs it through the Haar Cascade face detector to check whether a face is present, and if one is found, passes the frame to the MobileNetV2 model for emotion classification. Frames without a detected face are still counted (for presence tracking) but contribute no emotion data.</p>
+
+  <p>Question generation is handled by the Groq API. When the candidate signals they are done answering (by clicking a button or pressing a key), the backend takes the accumulated transcript for that question and sends it to Groq with a carefully engineered prompt that asks the model to evaluate the answer and generate the next question. The model receives context about the interview type, difficulty level, and any earlier answers to ensure that later questions adapt to what the candidate has already said rather than following a rigid script.</p>
+
+  <p>To prevent Groq's response caching from returning identical questions across sessions (a subtle bug that surfaced in testing), each request prefixes the system prompt with a unique UUID nonce. This makes each system prompt string unique so Groq cannot return a cached response even when the conversation context looks similar.</p>
+
+  <div class="page-num">5</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ PAGE 6 — PHASE 3B + 3C ═══════════════════════════════════════════════ -->
+<div class="page">
+  <h1>7. Phase 3B — Scoring and Report Card System</h1>
+
+  <p>At the conclusion of an interview, all the data collected during the session — transcripts, emotion probability distributions, speech analysis metrics, per-question evaluations — flows into the evaluation service which produces a structured report card. The scoring model uses five weighted dimensions:</p>
+
+  <table>
+    <tr><th>Dimension</th><th>Weight</th><th>Input signals</th></tr>
+    <tr><td>Technical Knowledge</td><td>35%</td><td>Transcript depth analysis via LLM evaluation</td></tr>
+    <tr><td>Communication Skills</td><td>25%</td><td>Clarity, structure, speech rate, filler word rate</td></tr>
+    <tr><td>Confidence</td><td>25%</td><td>Pace consistency, hesitation markers, answer completeness</td></tr>
+    <tr><td>Visual Confidence</td><td>15%</td><td>Emotion distribution (weighted: Happiness/Neutral positive; Anger/Contempt/Disgust negative)</td></tr>
+    <tr><td>Presence Rate</td><td>Modifier</td><td>Ratio of frames with detected face to total frames</td></tr>
+  </table>
+
+  <p>Each dimension score is expressed on a 0–100 scale, and the composite score is the weighted sum of all five. At the top of the report card, the system outputs one of three hiring recommendations — Hire, Maybe, or No Hire — based on the composite score and on whether any critical red flags were detected during the session (such as very low presence or a high integrity risk level).</p>
+
+  <p>The report card also includes qualitative feedback generated by the LLM: a summary of how the candidate performed overall, a list of specific strengths, areas for improvement, and a written rationale for the hiring recommendation. This narrative component is important because raw scores without context are not particularly useful for a recruiter reviewing the report.</p>
+
+  <p>The completed report is saved to MongoDB as a <code>report_card</code> field on the interview document. Candidates and recruiters can view the report on the ReportPage at any point after the interview, and it can be saved as a PDF using the browser's native print dialog.</p>
+
+  <h1>8. Phase 3C — Emotion Analysis via Convolutional Neural Network</h1>
+
+  <p>The emotion analysis subsystem is built around a MobileNetV2 model fine-tuned on the RAF-DB dataset, which covers seven emotion categories: Happiness, Sadness, Anger, Fear, Disgust, Contempt, and Neutral. The model weight file is included directly in the repository (<code>backend/app/ml/models/mobilenet_emotion_model.h5</code>), making the system entirely self-contained — no external model download is required at startup.</p>
+
+  <p>The model expects 224×224 RGB images with pixel values in the range [0, 1]. This turned out to be a critical detail: the model was trained on Google Colab using Keras's <code>ImageDataGenerator(rescale=1./255)</code>, which divides each pixel value by 255 before training. During development, the inference code initially used MobileNetV2's standard preprocessing formula of <code>(pixel / 127.5) - 1.0</code>, which outputs values in the range [−1, 1]. On the wrong range, the model defaulted to predicting 100% Neutral on every single frame because the bias towards Neutral in the RAF-DB training set overwhelmed everything else when the input was out of distribution. Fixing the normalisation formula to simply divide by 255 immediately resolved the issue.</p>
+
+  <p>Rather than returning only the single top-predicted emotion per frame, the model returns all seven softmax probabilities. These are accumulated as running sums across all frames in a session. The result is a probability-weighted emotion distribution — if a frame has 0.60 Neutral and 0.30 Happiness, both numbers are added to their respective running totals rather than only incrementing Neutral. This approach means that secondary emotions are represented proportionally, which produces a much more accurate picture of the candidate's facial expressiveness throughout the interview.</p>
+
+  <p>Before running the CNN, each incoming frame is passed through an OpenCV Haar Cascade face detector. If no face is detected, the frame is counted toward the total frame count but contributes nothing to the emotion data. This allows the system to compute a meaningful presence rate — the percentage of frames in which the candidate's face was actually visible. Candidates who look away, sit out of frame, or share their screen instead of their camera will have a low presence rate, which is flagged in the report. Absence thresholds are set at 70% (amber warning) and 40% (critical red warning).</p>
+
+  <div class="page-num">6</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ PAGE 7 — RESUME PARSER + ROLES ═══════════════════════════════════════════════ -->
+<div class="page">
+  <h1>9. Feature: Resume Parser and Contextual Question Generation</h1>
+
+  <p>One limitation of a purely generic interview is that questions are not tailored to the specific person being interviewed. A candidate with three years of React experience and two years of Node.js is a different interview subject than someone who has only built academic projects in Python. Adding resume parsing addressed this gap.</p>
+
+  <p>When a candidate uploads a PDF resume before starting an interview, the file is sent to the <code>POST /interviews/parse-resume</code> endpoint. The backend uses pdfplumber to extract raw text from the PDF, which is then sent to Groq with a prompt instructing it to return a structured JSON object containing two fields: a list of technical skills and a list of project descriptions. This JSON is stored on the interview document as <code>resume_context</code>.</p>
+
+  <p>When the interview begins and the WebSocket handler is generating each question, it reads the <code>resume_context</code> from the database and injects the candidate's skills and project list into the system prompt. Groq is then explicitly instructed to relate questions to the candidate's actual background — asking about technologies they claim to know, probing specific projects they describe, or comparing their approach to industry alternatives. In practice, this makes the interview feel significantly more personalized and produces more useful signal for the evaluator.</p>
+
+  <p>The frontend shows a file input on each interview card and tracks the upload state independently per interview. The Start button remains disabled until a PDF has been selected for recruiter-scheduled interviews, because the resume context is mandatory for those sessions. For self-scheduled interviews, the resume is optional — the button is enabled regardless, and the question generator simply falls back to generic questions if no context is available.</p>
+
+  <h1>10. Feature: Dual-Role System — Recruiter and Candidate</h1>
+
+  <p>The initial version of the system only supported one type of user: a candidate who schedules and takes their own interviews. A second feature session added a recruiter role with its own dashboard and a scheduling workflow that allows recruiters to set up interviews for specific candidates in advance.</p>
+
+  <h2>Role Architecture</h2>
+
+  <p>Each user document in MongoDB has a <code>role</code> field that is either <code>"candidate"</code> or <code>"recruiter"</code>, and a <code>role_switch_count</code> integer. On first login, the user is redirected to a role selection page where they choose their role. This initial selection is handled by a <code>PATCH /auth/me/role</code> endpoint that sets the role without incrementing the switch count. Users are permitted to switch roles exactly once — this is enforced server-side by the <code>POST /auth/me/switch-role</code> endpoint, which rejects any request when <code>role_switch_count</code> is already 1. The switch count is incremented atomically using MongoDB's <code>$inc</code> operator to avoid race conditions. In the Navbar, the "Switch Role" option is only visible when the current switch count is zero, so users who have already switched see no option to switch again.</p>
+
+  <h2>Recruiter Dashboard and Interview Scheduling</h2>
+
+  <p>Recruiters see a different dashboard from candidates. Instead of a personal interview history, they see a scheduling form and a list of all interviews they have created for others. To schedule an interview, a recruiter provides the candidate's email address — the system looks up the candidate's name via a <code>GET /auth/user-by-email</code> endpoint — then specifies the interview role, type, difficulty level, and number of questions. The resulting interview document is stored with a <code>scheduled_by</code> field (the recruiter's UID) and a status of <code>SCHEDULED</code>.</p>
+
+  <p>On the candidate side, the dashboard has a new "Scheduled for You" section that shows all interviews where the candidate's UID appears as the target. Each card in this section requires the candidate to upload a resume before they can start — the Start button is programmatically disabled until a PDF has been selected. Once the interview is complete, the recruiter can navigate to the report from their own dashboard to review the results.</p>
+
+  <p>Both the candidate who took the interview and the recruiter who scheduled it can delete the interview record. The delete endpoint checks both possible ownership conditions before allowing the operation, so neither party can delete an interview that belongs to someone else.</p>
+
+  <div class="page-num">7</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ PAGE 8 — INTEGRITY + THEMING ═══════════════════════════════════════════════ -->
+<div class="page">
+  <h1>11. Feature: Academic Integrity Detection for AI-Generated Answers</h1>
+
+  <p>As large language models become more accessible, a realistic concern for any AI-assisted evaluation platform is the possibility that candidates use those same language models to generate their answers — typing the question into ChatGPT, reading the output aloud, and appearing to answer fluently without any genuine understanding. This feature was added specifically to detect that behavior.</p>
+
+  <p>The detection system uses two independent layers that operate on the transcript of each answer.</p>
+
+  <h2>Layer 1 — Explicit AI Disclosure Detection</h2>
+
+  <p>The first layer uses fourteen regular expression patterns to catch cases where a language model explicitly identifies itself. These patterns cover phrases like "as an AI language model," "my training data," "I cannot browse the internet," "I don't have access to real-time information," and explicit mentions of AI assistant names such as ChatGPT, Claude, Gemini, Bard, or Copilot. These are phrases that a human speaker essentially never uses in conversation but that appear frequently in unedited AI outputs. A match on any of these patterns immediately flags the answer as high-risk.</p>
+
+  <h2>Layer 2 — Linguistic Naturalness Analysis</h2>
+
+  <p>The second layer is more subtle and addresses the case where candidates either edit the AI output or prompt it to speak naturally. It computes five objective linguistic metrics from the transcript text:</p>
+
+  <ol>
+    <li><strong>Disfluency rate:</strong> Human speakers routinely use filler words — "um," "uh," "like," "you know" — especially when thinking on their feet. An answer of forty or more words with zero disfluencies is statistically unusual and contributes three suspicion points.</li>
+    <li><strong>Enumerative structure:</strong> AI models heavily favour listing structures with words like "firstly," "secondly," "additionally," and "furthermore." Heavy use of these markers adds one to two suspicion points.</li>
+    <li><strong>AI hedging phrases:</strong> Phrases such as "it is important to note," "plays a crucial role," "there are several key aspects," and "in conclusion" appear far more often in AI output than in natural speech. Matching these phrases contributes one to four suspicion points depending on frequency.</li>
+    <li><strong>Absence of personal anecdotes:</strong> Genuine interview answers frequently include phrases like "in my experience," "when I worked on," or "a project I built." For answers longer than sixty words, the absence of any first-person personal reference adds one suspicion point.</li>
+    <li><strong>Sentence completeness:</strong> AI-generated text is almost always grammatically complete. A near-perfect sentence completion rate (95% or above) is unusual for spontaneous speech and contributes one additional point.</li>
+  </ol>
+
+  <p>The suspicion points are converted into a naturalness score on a 0–10 scale, where 10 is completely natural and 0 indicates maximum suspicion. Both the keyword hits and the naturalness scores are injected into the Groq prompt as objective facts, along with mandatory flagging rules — the LLM is explicitly told that zero disfluencies across multiple answers constitutes a medium-risk signal even without any keyword matches.</p>
+
+  <p>The report card includes a dedicated integrity section displaying either a green "Integrity Check Passed" banner or a risk-level warning (Low, Medium, or High) with per-answer flag cards showing the specific reason and a suspicious excerpt from the transcript.</p>
+
+  <h1>12. UI/UX — Three-Mode Theming System</h1>
+
+  <p>The application supports three visual themes — Dark, Light, and Aesthetic — switchable at any time from the navigation bar without reloading the page. The theme engine is built on CSS custom properties. Every color used across the application — backgrounds, text, borders, shadows, gradients — is defined as a CSS variable that resolves to a different value depending on a <code>data-theme</code> attribute on the root element. Tailwind CSS is configured to use these variables via <code>rgb(var(--c-*))</code> references, which means no JSX changes are needed when switching themes; only the CSS variable values change.</p>
+
+  <p>Theme state is managed by a Zustand store with persistence, so the user's preferred theme survives page refreshes. To prevent a flash of unstyled content on load, the theme store applies the theme synchronously at module initialization — before React mounts — by writing the <code>data-theme</code> attribute directly to the document element.</p>
+
+  <p>The Aesthetic theme uses a warm rose-and-cream palette: deep wine text (<code>#1A0A10</code>) on cream backgrounds (<code>#FCF5EE</code>), with rose gradients on primary buttons and subtle blush tints on card surfaces. The Light and Dark themes use an indigo brand color with neutral surface palettes appropriate for each mode.</p>
+
+  <div class="page-num">8</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ PAGE 9 — CHALLENGES ═══════════════════════════════════════════════ -->
+<div class="page">
+  <h1>13. Challenges Encountered and How They Were Resolved</h1>
+
+  <p>A project of this complexity — involving real-time audio, video, machine learning, and LLM integration running simultaneously — inevitably encountered several non-trivial problems during development. This section documents the most significant ones.</p>
+
+  <h2>13.1 Camera Access Failing Silently on Windows</h2>
+
+  <p>After adding theming support in a later development session, the camera and microphone stopped working on the Windows development machine. The root cause turned out to be two specific audio constraints in the <code>getUserMedia</code> call: <code>sampleRate: 16000</code> and <code>noiseSuppression: true</code>. On some Windows audio drivers, requesting a specific sample rate causes the entire media request — both audio and video — to fail with a generic permission error that does not clearly indicate which constraint was rejected. Removing those constraints and implementing a fallback retry (<code>{ video: true, audio: true }</code> on failure) resolved the issue. A twenty-second timeout was also added to the <code>getUserMedia</code> call to handle cases where the browser shows a permission prompt that the user ignores indefinitely.</p>
+
+  <h2>13.2 Emotion Model Always Predicting Neutral</h2>
+
+  <p>This bug had two separate root causes that manifested at different stages. The first was the preprocessing mismatch described in Section 8 — using the wrong normalization formula caused every frame to be out-of-distribution, and the model defaulted to its most heavily represented training class. Fixing the formula to <code>rgb / 255.0</code> resolved the classification issue, but the report card still showed 100% Neutral afterward.</p>
+
+  <p>The second cause was in the aggregation logic. After the preprocessing fix, the system was accumulating only the single top-predicted emotion per frame. In a typical frame where the model predicted 55% Neutral and 35% Happiness, only Neutral would be incremented. Over a full interview, this produced a Neutral-dominated distribution even when the candidate was visibly expressive. The fix was to accumulate all seven softmax probabilities per frame as floating-point sums, so that every emotion is represented proportionally across the session.</p>
+
+  <h2>13.3 Haar Cascade Face Detection Failing on All Frames</h2>
+
+  <p>The face detection stage was implemented to avoid classifying empty frames, but after initial deployment it was reporting 100% absence even with the candidate sitting directly in front of the camera. The problem was that the <code>_has_face()</code> method was halving the frame resolution from 224×224 to 112×112 before running the cascade. At 224×224, the face in a typical webcam view is approximately 60–80 pixels wide. After halving, it shrank to 30–40 pixels — right at the edge of what the cascade can detect reliably — and JPEG compression artifacts at that scale made detection fail consistently. Removing the halving step and running the cascade directly on the full 224×224 frame, combined with relaxing <code>minNeighbors</code> from 5 to 3, resolved the issue completely.</p>
+
+  <h2>13.4 LLM Returning Duplicate Questions Across Sessions</h2>
+
+  <p>During testing, it was noticed that when the same interview role and difficulty were used in multiple consecutive sessions, the LLM sometimes returned identical opening questions. This turned out to be Groq's response caching, which returns cached completions when the prompt matches a previous request. The initial fix was to append a random nonce to the user-role message, but Groq's caching operates at the system prompt level — a matching system prompt with a different user message still returns the cached response. Moving the UUID nonce to the system prompt prefix (as <code>[sid:{uuid}]</code>) made every system prompt string unique, defeating the cache entirely.</p>
+
+  <h2>13.5 Chrome Autoplay Policy Blocking Audio Context</h2>
+
+  <p>The Web Audio API requires an <code>AudioContext</code> to be resumed after creation in Chrome because of the browser's autoplay policy, which suspends audio contexts that are created without a prior user interaction. The <code>useInterviewWS</code> hook was creating the context correctly but not explicitly calling <code>audioCtx.resume()</code> afterward, causing audio capture to silently fail in some sessions. Adding <code>await audioCtx.resume()</code> immediately after context creation fixed the issue.</p>
+
+  <h2>13.6 TTS Voice Continuing After Navigation</h2>
+
+  <p>The AI question voice (generated via <code>window.speechSynthesis</code>) continued playing after the user navigated away from the interview page — for example, if they clicked the back button mid-question. The fix was to call <code>window.speechSynthesis.cancel()</code> in the React cleanup function that runs when the <code>InterviewPage</code> component unmounts. This is a standard React pattern but easy to overlook when working with browser APIs that maintain their own state outside the React lifecycle.</p>
+
+  <h2>13.7 Keras 3 Compatibility with tensorflow-cpu</h2>
+
+  <p>The emotion model was trained on Google Colab using Keras 3 (TensorFlow 2.16+), which serializes model configs with new fields — <code>quantization_config</code> and <code>optional</code> — that earlier versions of the Keras layer constructors do not recognize. Loading the model on the development machine's <code>tensorflow-cpu</code> install raised errors on these unrecognized keys. The fix was a monkey-patch applied in the model loader: the <code>Layer.from_config</code> method is wrapped to strip any unrecognized keys before they reach the constructor, allowing the model to load cleanly regardless of the Keras version mismatch.</p>
+
+  <div class="page-num">9</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ PAGE 10 — CONCLUSION ═══════════════════════════════════════════════ -->
+<div class="page">
+  <h1>14. Conclusion</h1>
+
+  <p>The Real-Time Multimodal AI Interview Framework is a complete, working system that conducts adaptive job interviews using live speech recognition, emotion analysis, and a large language model — simultaneously, within a single WebSocket session. It handles candidates from login to report card without requiring any human involvement in the interview itself, and it produces a structured, multi-dimensional performance report that a recruiter can review asynchronously.</p>
+
+  <p>What makes this project technically interesting is not any one individual component but the combination of all of them working in real time. Streaming audio to Deepgram, streaming video frames through a CNN, and exchanging conversational turns with an LLM — all over the same WebSocket connection, with the results of each feeding into the next — required careful thinking about timing, state management, and error handling at every layer of the stack.</p>
+
+  <p>Several features evolved beyond the initial scope in response to real limitations discovered during testing. The academic integrity detection system was added because it became clear that keyword-only detection was insufficient. The emotion aggregation was rethought from top-1 classification to full probability accumulation after the first implementation produced misleading results. The face detection pipeline was tuned after discovering that frame resolution and compression artifacts interact in ways that aren't obvious on paper. Each of these changes is documented in the commit history and reflects a genuine iterative engineering process rather than a system built to a predetermined specification.</p>
+
+  <p>The system currently runs entirely in a local development environment. Future work would include deploying the FastAPI backend to a cloud provider (Render or Railway are the most practical options given the TensorFlow dependency), deploying the React frontend to Vercel, and migrating the Deepgram connection to use server-side audio recording rather than browser-captured PCM streams. These changes would allow the platform to be used without any local setup.</p>
+
+  <p>From a broader perspective, this project demonstrates that a relatively small team — in this case, a single developer — can integrate speech recognition, computer vision, and large language model APIs into a coherent product without access to high-end hardware or enterprise tooling. The combination of cloud-hosted APIs (Groq, Deepgram, Firebase, MongoDB Atlas) and lightweight local inference (MobileNetV2 on CPU) makes the kind of system that would have required a significant team and infrastructure just a few years ago buildable on a consumer laptop in the span of a few months.</p>
+
+  <div class="section-break"></div>
+  <div class="section-break"></div>
+
+  <h2>Summary of Deliverables</h2>
+
+  <table>
+    <tr><th>Component</th><th>Status</th><th>Key Technologies</th></tr>
+    <tr><td>Backend API (FastAPI)</td><td>Complete</td><td>Python 3.10, Uvicorn, Motor, Pydantic</td></tr>
+    <tr><td>Frontend Application (React)</td><td>Complete</td><td>React 18, Vite, Zustand, Tailwind CSS</td></tr>
+    <tr><td>Authentication System</td><td>Complete</td><td>Firebase Auth (Google + email)</td></tr>
+    <tr><td>Real-Time WebSocket Engine</td><td>Complete</td><td>FastAPI WebSocket, Web Audio API</td></tr>
+    <tr><td>Speech-to-Text Integration</td><td>Complete</td><td>Deepgram Nova-2 streaming</td></tr>
+    <tr><td>LLM Question Generation</td><td>Complete</td><td>Groq API — openai/gpt-oss-120b</td></tr>
+    <tr><td>Emotion Analysis (CNN)</td><td>Complete</td><td>MobileNetV2, RAF-DB, tensorflow-cpu</td></tr>
+    <tr><td>Face Presence Detection</td><td>Complete</td><td>OpenCV Haar Cascade</td></tr>
+    <tr><td>Report Card &amp; Scoring Engine</td><td>Complete</td><td>Weighted multi-dimensional scoring</td></tr>
+    <tr><td>Resume Parser</td><td>Complete</td><td>pdfplumber, Groq structured output</td></tr>
+    <tr><td>Recruiter / Candidate Role System</td><td>Complete</td><td>MongoDB roles, one-time switch enforcement</td></tr>
+    <tr><td>Interview Scheduling Portal</td><td>Complete</td><td>Recruiter dashboard, candidate lookup</td></tr>
+    <tr><td>Academic Integrity Detection</td><td>Complete</td><td>Regex patterns + linguistic metrics</td></tr>
+    <tr><td>Three-Mode Theming</td><td>Complete</td><td>CSS custom properties, Zustand persist</td></tr>
+    <tr><td>PDF Report Export</td><td>Complete</td><td>window.print(), print-optimized CSS</td></tr>
+    <tr><td>Version Control</td><td>Complete</td><td>Git, GitHub (private — main branch)</td></tr>
+  </table>
+
+  <div class="section-break"></div>
+  <div class="section-break"></div>
+  <div class="section-break"></div>
+
+  <div style="text-align:center; color:#666; font-size:10.5pt; border-top: 1px solid #ccc; padding-top:14px;">
+    Real-Time Multimodal AI Interview Framework &mdash; Project Execution Report &mdash; Devang Wani &mdash; 2026
+  </div>
+
+  <div class="page-num">10</div>
+</div>
+
+</body>
+</html>

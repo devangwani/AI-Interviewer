@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Interviewer — Project Report</title>
+<style>
+  /* ── Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    color: #1a1a2e;
+    background: #fff;
+  }
+
+  /* ── Page layout ── */
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    padding: 18mm 18mm 16mm 18mm;
+    page-break-after: always;
+    position: relative;
+  }
+  .page:last-child { page-break-after: avoid; }
+
+  /* ── Cover page ── */
+  .cover {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 297mm;
+    padding: 30mm 22mm;
+    background: linear-gradient(145deg, #0f0c29, #302b63, #24243e);
+    color: #fff;
+  }
+  .cover-badge {
+    font-size: 8pt;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #a78bfa;
+    margin-bottom: 14px;
+  }
+  .cover h1 {
+    font-size: 30pt;
+    font-weight: 800;
+    line-height: 1.15;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+  .cover h1 span { color: #818cf8; }
+  .cover .subtitle {
+    font-size: 13pt;
+    color: #c4b5fd;
+    margin-bottom: 36px;
+    font-weight: 400;
+  }
+  .cover-meta { display: flex; flex-direction: column; gap: 6px; }
+  .cover-meta p { font-size: 9.5pt; color: #e2e8f0; }
+  .cover-meta strong { color: #a5b4fc; }
+  .cover-divider {
+    width: 60px; height: 3px;
+    background: linear-gradient(90deg, #818cf8, #a78bfa);
+    border-radius: 2px;
+    margin: 28px 0;
+  }
+  .cover-stack {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px;
+  }
+  .cover-chip {
+    background: rgba(129,140,248,0.15);
+    border: 1px solid rgba(129,140,248,0.4);
+    color: #c4b5fd;
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 8.5pt;
+  }
+
+  /* ── Section headings ── */
+  h2 {
+    font-size: 14pt;
+    font-weight: 700;
+    color: #312e81;
+    border-left: 4px solid #6366f1;
+    padding-left: 10px;
+    margin-bottom: 12px;
+    margin-top: 0;
+  }
+  h3 {
+    font-size: 11pt;
+    font-weight: 700;
+    color: #1e1b4b;
+    margin-bottom: 6px;
+    margin-top: 14px;
+  }
+  h4 {
+    font-size: 10pt;
+    font-weight: 600;
+    color: #4338ca;
+    margin-bottom: 4px;
+    margin-top: 10px;
+  }
+
+  /* ── Page header stripe ── */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #e0e7ff;
+    padding-bottom: 8px;
+    margin-bottom: 18px;
+  }
+  .page-header .proj { font-size: 8pt; color: #6366f1; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  .page-header .pg { font-size: 8pt; color: #94a3b8; }
+
+  /* ── Page footer ── */
+  .page-footer {
+    position: absolute;
+    bottom: 12mm;
+    left: 18mm; right: 18mm;
+    display: flex;
+    justify-content: space-between;
+    font-size: 7.5pt;
+    color: #94a3b8;
+    border-top: 1px solid #e0e7ff;
+    padding-top: 5px;
+  }
+
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5pt;
+    margin-bottom: 10px;
+  }
+  thead tr { background: #eef2ff; }
+  th {
+    text-align: left;
+    padding: 5px 8px;
+    font-weight: 700;
+    color: #3730a3;
+    border-bottom: 2px solid #c7d2fe;
+    font-size: 9pt;
+  }
+  td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #e0e7ff;
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #f8f9ff; }
+
+  /* ── Cards ── */
+  .card {
+    background: #f5f3ff;
+    border: 1px solid #ddd6fe;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+  }
+  .card-row { display: flex; gap: 10px; }
+  .card-row .card { flex: 1; }
+
+  /* ── Inline code / tags ── */
+  code {
+    background: #ede9fe;
+    color: #5b21b6;
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 8.5pt;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* ── Verdict table ── */
+  .verdict-row-strong { background: #dcfce7 !important; }
+  .verdict-row-hire   { background: #d1fae5 !important; }
+  .verdict-row-maybe  { background: #fef9c3 !important; }
+  .verdict-row-nohire { background: #fee2e2 !important; }
+
+  /* ── Formula box ── */
+  .formula {
+    background: #1e1b4b;
+    color: #c4b5fd;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 9pt;
+    margin: 8px 0;
+  }
+
+  /* ── Risk badge ── */
+  .risk-high  { color: #b91c1c; font-weight: 700; }
+  .risk-med   { color: #b45309; font-weight: 700; }
+  .risk-low   { color: #854d0e; font-weight: 700; }
+  .risk-none  { color: #166534; font-weight: 700; }
+
+  /* ── Two-col layout ── */
+  .two-col { display: flex; gap: 14px; }
+  .two-col > div { flex: 1; }
+
+  /* ── Architecture flow ── */
+  .flow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0;
+    margin: 10px 0;
+    font-size: 8.5pt;
+  }
+  .flow-box {
+    background: #eef2ff;
+    border: 1px solid #a5b4fc;
+    border-radius: 5px;
+    padding: 5px 10px;
+    color: #3730a3;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .flow-arrow {
+    padding: 0 5px;
+    color: #6366f1;
+    font-size: 11pt;
+    font-weight: 700;
+  }
+
+  /* ── Print settings ── */
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .page { margin: 0; width: 100%; }
+    .no-print { display: none; }
+  }
+
+  /* ── Screen: center pages ── */
+  @media screen {
+    body { background: #cbd5e1; }
+    .page { box-shadow: 0 4px 24px rgba(0,0,0,0.18); margin: 20px auto; }
+    .cover { border-radius: 4px; }
+    .print-btn {
+      position: fixed; top: 20px; right: 20px;
+      background: #6366f1; color: #fff;
+      border: none; border-radius: 8px;
+      padding: 10px 22px; font-size: 11pt;
+      cursor: pointer; font-weight: 600;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.4);
+      z-index: 100;
+    }
+    .print-btn:hover { background: #4f46e5; }
+  }
+
+  ul { margin: 4px 0 6px 18px; }
+  li { margin-bottom: 2px; }
+  p { margin-bottom: 6px; }
+  .small { font-size: 8.5pt; color: #64748b; }
+  .mt { margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">⬇ Download PDF</button>
+
+<!-- ══════════════════════════════════════
+     PAGE 1 — COVER + ARCHITECTURE
+     ══════════════════════════════════════ -->
+<div class="page cover">
+  <div class="cover-badge">Capstone Project Report</div>
+  <h1>Real-Time Multimodal<br/><span>AI Interviewer</span></h1>
+  <div class="subtitle">Automated Interview Evaluation Framework</div>
+  <div class="cover-divider"></div>
+  <div class="cover-meta">
+    <p><strong>Author:</strong> Devang Wani</p>
+    <p><strong>GitHub:</strong> github.com/devangwani/AI-Interviewer (private)</p>
+    <p><strong>Date:</strong> June 2026</p>
+    <p><strong>Version:</strong> Commit 1e2ff8a — Production Build</p>
+  </div>
+  <div class="cover-stack">
+    <span class="cover-chip">React 18</span>
+    <span class="cover-chip">FastAPI</span>
+    <span class="cover-chip">MongoDB Atlas</span>
+    <span class="cover-chip">Groq LLaMA-3.3-70B</span>
+    <span class="cover-chip">Deepgram STT</span>
+    <span class="cover-chip">MobileNetV2</span>
+    <span class="cover-chip">Firebase Auth</span>
+    <span class="cover-chip">WebSocket</span>
+    <span class="cover-chip">OpenCV Haar Cascade</span>
+    <span class="cover-chip">Tailwind CSS</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE 2 — OVERVIEW + FRONTEND PAGES
+     ══════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <span class="proj">AI Interviewer — Project Report</span>
+    <span class="pg">Page 2 of 6</span>
+  </div>
+
+  <h2>1. System Overview</h2>
+  <p>The AI Interviewer is a full-stack web application that conducts automated, real-time job interviews. It streams audio for speech-to-text transcription, captures webcam frames for facial emotion analysis, dynamically generates questions via a large language model, and produces a multimodal report card scoring the candidate across communication, technical depth, confidence, and camera presence dimensions. It supports two user roles — <strong>Candidate</strong> and <strong>Recruiter</strong> — each with a separate dashboard.</p>
+
+  <h3>End-to-End Data Flow</h3>
+  <div class="flow">
+    <div class="flow-box">Firebase Auth</div><div class="flow-arrow">→</div>
+    <div class="flow-box">Dashboard</div><div class="flow-arrow">→</div>
+    <div class="flow-box">WebSocket Session</div><div class="flow-arrow">→</div>
+    <div class="flow-box">Groq (Questions)</div><div class="flow-arrow">→</div>
+    <div class="flow-box">Deepgram (STT)</div><div class="flow-arrow">+</div>
+    <div class="flow-box">MobileNetV2 (Emotion)</div><div class="flow-arrow">→</div>
+    <div class="flow-box">Groq (Report)</div><div class="flow-arrow">→</div>
+    <div class="flow-box">MongoDB Atlas</div><div class="flow-arrow">→</div>
+    <div class="flow-box">Report Page</div>
+  </div>
+
+  <h2 class="mt">2. Frontend Pages</h2>
+
+  <h3>2.1 LoginPage <code>/login</code></h3>
+  <p>Entry point for all users. Supports Google OAuth popup and email/password login or registration via Firebase. After authentication, calls <code>POST /auth/login</code> to upsert the MongoDB user record, stores the profile in Zustand, then routes to <code>/select-role</code> if the user has no role, otherwise to <code>/dashboard</code>.</p>
+  <table>
+    <thead><tr><th>Function</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr><td><code>handleGoogle()</code></td><td>Triggers Firebase Google popup sign-in, then calls <code>afterAuth()</code>.</td></tr>
+      <tr><td><code>handleEmailSubmit(e)</code></td><td>Calls Firebase email/password register or sign-in depending on mode toggle, then calls <code>afterAuth()</code>.</td></tr>
+      <tr><td><code>afterAuth()</code></td><td>Syncs auth result with the backend, persists user profile to Zustand, and performs role-based navigation.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.2 RoleSelectPage <code>/select-role</code></h3>
+  <p>Shown once after first login. Presents two role cards — Candidate and Recruiter. On click, calls <code>PATCH /auth/me/role</code> which sets the role without incrementing the switch counter. Redirects immediately if a role is already set.</p>
+
+  <h3>2.3 DashboardPage <code>/dashboard</code></h3>
+  <p>Root post-login page. Acts as a role-based router: renders <code>&lt;RecruiterDashboard/&gt;</code> for recruiters, or the full candidate view otherwise. The candidate view has two sub-flows: self-directed interviews (configure role, type, difficulty, question count, optional resume upload) and recruiter-scheduled interviews (resume mandatory before start).</p>
+  <table>
+    <thead><tr><th>Function</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr><td><code>handleStart()</code></td><td>Optionally parses resume → creates interview → starts session → navigates to <code>/interview/:id</code>.</td></tr>
+      <tr><td><code>handleStartScheduled(iv)</code></td><td>Parses the uploaded PDF → patches resume context to the interview doc → starts session → navigates.</td></tr>
+      <tr><td><code>handleFileDrop(e)</code></td><td>Handles drag-and-drop or file-input events, validates PDF type before setting <code>resumeFile</code> state.</td></tr>
+      <tr><td><code>handleDelete(id, e)</code></td><td>Confirms then deletes the interview and removes it from local state.</td></tr>
+      <tr><td><code>StatusBadge({ status })</code></td><td>Inline component: renders a colour-coded pill for interview status (Scheduled / Pending / In Progress / Completed / Cancelled).</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.4 RecruiterDashboard</h3>
+  <p>Dedicated recruiter view with a schedule form (candidate name, email, job role, type, difficulty, question count) and a list of all interviews the recruiter has created with status badges and report links.</p>
+  <table>
+    <thead><tr><th>Function</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr><td><code>handleSchedule(e)</code></td><td>Validates inputs → calls <code>POST /interviews/schedule</code> → refreshes interview list.</td></tr>
+      <tr><td><code>loadInterviews()</code></td><td>Fetches all interviews where <code>scheduled_by == current_uid</code> from the backend.</td></tr>
+      <tr><td><code>handleDelete(id)</code></td><td>Confirms, deletes the interview, and removes it from local state.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="page-footer">
+    <span>Real-Time Multimodal AI Interviewer</span>
+    <span>Devang Wani · Capstone 2026</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE 3 — INTERVIEW PAGE + HOOKS
+     ══════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <span class="proj">AI Interviewer — Project Report</span>
+    <span class="pg">Page 3 of 6</span>
+  </div>
+
+  <h2>3. Live Interview Engine</h2>
+
+  <h3>3.1 InterviewPage <code>/interview/:id</code></h3>
+  <p>The core session UI. Orchestrates a 7-phase state machine, managing camera/mic access, WebSocket communication, TTS playback, live transcript display, a 120-second countdown timer, and proctoring violation tracking (tab-switch detection).</p>
+
+  <div class="card" style="margin-bottom:10px;">
+    <strong>Phase State Machine:</strong>
+    <div class="flow" style="margin-top:6px; flex-wrap:wrap; gap:4px;">
+      <div class="flow-box" style="font-size:8pt; padding:3px 7px;">loading</div><div class="flow-arrow" style="padding:0 3px;">→</div>
+      <div class="flow-box" style="font-size:8pt; padding:3px 7px;">ready</div><div class="flow-arrow" style="padding:0 3px;">→</div>
+      <div class="flow-box" style="font-size:8pt; padding:3px 7px;">speaking</div><div class="flow-arrow" style="padding:0 3px;">→</div>
+      <div class="flow-box" style="font-size:8pt; padding:3px 7px;">listening</div><div class="flow-arrow" style="padding:0 3px;">→</div>
+      <div class="flow-box" style="font-size:8pt; padding:3px 7px;">processing</div><div class="flow-arrow" style="padding:0 3px;">→</div>
+      <div class="flow-box" style="font-size:8pt; padding:3px 7px;">submitting</div><div class="flow-arrow" style="padding:0 3px;">→</div>
+      <div class="flow-box" style="font-size:8pt; padding:3px 7px;">done</div>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>Function</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr><td><code>onQuestion(text, index, total)</code></td><td>WebSocket callback: updates question state, resets transcript, starts TTS; on TTS completion transitions to <em>listening</em> and begins audio + frame streaming.</td></tr>
+      <tr><td><code>handleSubmit()</code></td><td>Called by the Submit button or countdown timer expiry; stops audio, stops frame capture, sends <code>end_answer</code> over WebSocket, transitions to <em>processing</em>.</td></tr>
+      <tr><td><code>onGeneratingReport()</code></td><td>WebSocket callback: sets phase to <em>submitting</em> to show the generation spinner.</td></tr>
+      <tr><td><code>onComplete(sessionId)</code></td><td>Fetches the final report, stops all media, sets phase to <em>done</em>, and navigates to the report page.</td></tr>
+      <tr><td><code>onError(msg)</code></td><td>Stores the error message for display in the error overlay.</td></tr>
+      <tr><td><code>formatTime(s)</code></td><td>Converts seconds to M:SS format for the countdown display.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 Hook — <code>useWebRTC.js</code></h3>
+  <p>Manages browser camera and microphone access. Attempts specific constraints (640×480) first, falls back to bare <code>{ video: true, audio: true }</code>. Each attempt has a 20-second hard timeout via <code>Promise.race</code>. Returns <code>true/false</code> so callers can gate WebSocket connection. A <code>useEffect</code> assigns <code>srcObject</code> only when the active stream reference changes, preventing race conditions.</p>
+
+  <table>
+    <thead><tr><th>Function</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr><td><code>startMedia()</code></td><td>Requests camera+mic with two-constraint retry, 20s timeout wrapper; returns <code>true</code> on success.</td></tr>
+      <tr><td><code>stopMedia()</code></td><td>Stops all media tracks, clears refs, sets <code>mediaReady = false</code>.</td></tr>
+      <tr><td><code>getMediaWithTimeout(constraints)</code></td><td>Internal helper — wraps <code>getUserMedia</code> in a race with a 20-second reject timer; cleans up orphaned streams.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.3 Hook — <code>useInterviewWS.js</code></h3>
+  <p>Manages the single WebSocket connection to <code>/api/v1/interviews/ws/{sessionId}</code>. Handles three outbound streams (raw PCM audio bytes, base64 JPEG video frames every 3 seconds, JSON control messages) and four inbound message types. All callbacks are stored in refs to prevent stale-closure bugs on re-renders.</p>
+
+  <table>
+    <thead><tr><th>Function</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr><td><code>connect()</code></td><td>Opens the WebSocket; dispatches inbound messages (<code>ai_question</code>, <code>transcript</code>, <code>generating_report</code>, <code>interview_complete</code>, <code>error</code>) to ref-stored callbacks.</td></tr>
+      <tr><td><code>startAudio(mediaStream)</code></td><td>Creates a 16 kHz AudioContext, connects a ScriptProcessor node (4096-sample, mono), converts Float32 PCM to Int16, sends raw bytes over WebSocket.</td></tr>
+      <tr><td><code>startFrames(videoEl)</code></td><td>Every 3 seconds: draws the video element onto a 224×224 canvas, encodes as base64 JPEG at 70% quality, sends as <code>{"type":"video_frame","data":"..."}</code>.</td></tr>
+      <tr><td><code>sendEndAnswer()</code></td><td>Sends <code>{"type":"end_answer"}</code> to signal the server to close the current Deepgram connection and generate the next question or report.</td></tr>
+      <tr><td><code>disconnect()</code></td><td>Stops audio, clears frame timer, closes the WebSocket.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.4 Hook — <code>useSpeechSynthesis.js</code></h3>
+  <p>TTS via the browser Web Speech API. Voice selection prefers "Google US English", then any remote en-US voice, then any English voice. The <code>onerror</code> handler distinguishes intentional cancellations (<code>"interrupted"/"canceled"</code>) from genuine errors — only genuine errors call <code>onEnd()</code> to advance the interview phase.</p>
+
+  <h3>3.5 Hook — <code>useVisibility.js</code> (Proctoring)</h3>
+  <p>Listens to <code>document.visibilitychange</code> and <code>window.blur</code> events; calls <code>incrementTabSwitch()</code> in Zustand whenever the candidate's window loses focus. Active only when <code>enabled=true</code> (disabled on <em>loading</em> and <em>done</em> phases).</p>
+
+  <div class="page-footer">
+    <span>Real-Time Multimodal AI Interviewer</span>
+    <span>Devang Wani · Capstone 2026</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE 4 — BACKEND SERVICES & ML
+     ══════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <span class="proj">AI Interviewer — Project Report</span>
+    <span class="pg">Page 4 of 6</span>
+  </div>
+
+  <h2>4. Backend Services</h2>
+
+  <h3>4.1 Groq Service — <code>groq_service.py</code></h3>
+  <p>All LLM interactions use the <code>llama-3.3-70b-versatile</code> model via an async singleton client. A UUID nonce is injected into both the system prompt and user prompt on every call to defeat Groq's system-prompt-level response cache (preventing all candidates getting the same first question).</p>
+
+  <table>
+    <thead><tr><th>Function</th><th>Model / Temp</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr><td><code>generate_next_question(...)</code></td><td>llama-3.3-70b / 0.9</td><td>Dynamically generates one question using full conversation history and optional resume context. Applies interview-type-aware system prompts: <strong>behavioural</strong> → STAR-method only; <strong>HR</strong> → culture-fit only; <strong>technical/system_design</strong> → engineering depth. Difficulty sub-instructions calibrate question depth (beginner = definitions; intermediate = patterns; advanced = production-scale design).</td></tr>
+      <tr><td><code>evaluate_answer(...)</code></td><td>llama-3.3-70b / 0.3</td><td>Sends a Q&A pair and returns a JSON dict with <code>score</code> (0–10 float), <code>strengths</code>, <code>improvements</code>, and <code>verdict</code> ("strong"/"acceptable"/"weak").</td></tr>
+      <tr><td><code>generate_interview_questions(...)</code></td><td>llama-3.3-70b / 0.7</td><td>Legacy batch question generator (used only if the WebSocket engine is unavailable). Returns a list of N question strings.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.2 Resume Service — <code>resume_service.py</code></h3>
+  <table>
+    <thead><tr><th>Function</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr><td><code>extract_text_from_pdf(file_bytes)</code></td><td>Opens PDF from bytes using <code>pdfplumber</code>, concatenates text from all pages into a single string.</td></tr>
+      <tr><td><code>parse_resume(file_bytes)</code></td><td>Calls extractor, truncates to 6,000 characters (token budget), sends to Groq (temp 0.1, JSON mode) with a parser prompt. Returns <code>{"skills": [...], "projects": [{"name":..., "description":...}]}</code>. Returns empty arrays on failure.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.3 Emotion Analysis — <code>emotion_analysis.py</code></h3>
+  <p>Facial emotion recognition using a <strong>MobileNetV2</strong> model fine-tuned on the RAF-DB dataset. Inference is offloaded to a thread-pool executor so it never blocks the async uvicorn event loop. An <strong>OpenCV Haar Cascade</strong> face detector gates each frame — frames with no detected face return <code>None</code> and are never counted in emotion statistics, preventing "Neutral" inflation from off-camera periods.</p>
+
+  <div class="two-col">
+    <div>
+      <h4>Class <code>EmotionAnalyzer</code> — methods</h4>
+      <table>
+        <thead><tr><th>Method</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr><td><code>load()</code></td><td>Loads the <code>.h5</code> model (Keras 3 compatibility patch applied), then loads the Haar Cascade. Idempotent.</td></tr>
+          <tr><td><code>analyze_frame(b64)</code></td><td>Async; offloads inference to thread pool. Returns <code>dict[label→prob]</code> or <code>None</code>.</td></tr>
+          <tr><td><code>_has_face(frame)</code></td><td>Runs <code>detectMultiScale</code> on full 224×224 greyscale frame (minNeighbors=3, minSize=40px). Returns <code>True</code> if any face found.</td></tr>
+          <tr><td><code>_preprocess(frame)</code></td><td>Resize → BGR→RGB → divide by 255.0 → add batch dim → shape (1,224,224,3).</td></tr>
+          <tr><td><code>_run_inference(b64)</code></td><td>Synchronous: decode → face check → preprocess → <code>model.predict()</code> → return all 7 softmax probabilities.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h4>RAF-DB Emotion Labels (model output order)</h4>
+      <table>
+        <thead><tr><th>Index</th><th>Label</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>Surprise</td></tr>
+          <tr><td>1</td><td>Fear</td></tr>
+          <tr><td>2</td><td>Disgust</td></tr>
+          <tr><td>3</td><td>Happiness</td></tr>
+          <tr><td>4</td><td>Sadness</td></tr>
+          <tr><td>5</td><td>Anger</td></tr>
+          <tr><td>6</td><td>Neutral</td></tr>
+        </tbody>
+      </table>
+      <div class="card" style="margin-top:8px; font-size:9pt;">
+        <strong>Probability accumulation:</strong> The WebSocket route sums the full 7-value softmax dict across all face-detected frames, so minority emotions (e.g., Happiness at 30% in a Neutral-dominant frame) are proportionally represented in the final distribution.
+      </div>
+    </div>
+  </div>
+
+  <h3>4.4 WebSocket Engine — <code>routes/interview.py</code></h3>
+  <p>The core real-time engine lives in the <code>interview_websocket</code> handler at <code>/ws/{session_id}</code>. It manages three parallel data streams within a single WebSocket connection.</p>
+
+  <div class="card-row">
+    <div class="card" style="font-size:9pt;">
+      <strong>Inbound from client</strong>
+      <ul style="margin-top:4px;">
+        <li><code>bytes</code> → raw PCM Int16, 16 kHz mono → Deepgram STT (lazy-connected on first audio byte)</li>
+        <li><code>video_frame</code> JSON → <code>emotion_analyzer.analyze_frame()</code> → accumulate to <code>emotion_stats</code></li>
+        <li><code>end_answer</code> JSON → close Deepgram, save transcript, generate next question or report</li>
+        <li><code>ping</code> → respond with <code>pong</code></li>
+      </ul>
+    </div>
+    <div class="card" style="font-size:9pt;">
+      <strong>Outbound to client</strong>
+      <ul style="margin-top:4px;">
+        <li><code>ai_question</code> → question text + index + total</li>
+        <li><code>transcript</code> → live STT chunk (is_final flag)</li>
+        <li><code>generating_report</code> → triggers spinner</li>
+        <li><code>interview_complete</code> → session_id + overall_score</li>
+        <li><code>error</code> → error message string</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="small" style="margin-top:4px;">After all questions are answered: the engine sends <code>generating_report</code>, builds <code>presence_stats</code>, calls <code>generate_report_card()</code>, persists to MongoDB via <code>save_report_to_db()</code>, then sends <code>interview_complete</code>.</p>
+
+  <div class="page-footer">
+    <span>Real-Time Multimodal AI Interviewer</span>
+    <span>Devang Wani · Capstone 2026</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE 5 — EVALUATION & SCORING
+     ══════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <span class="proj">AI Interviewer — Project Report</span>
+    <span class="pg">Page 5 of 6</span>
+  </div>
+
+  <h2>5. Evaluation & Scoring System</h2>
+  <p>All scoring happens inside <code>evaluation_service.py</code> via the <code>generate_report_card()</code> function, which feeds four evidence sources to <code>llama-3.3-70b-versatile</code> (temperature 0.2, max_tokens 4096, JSON mode).</p>
+
+  <h3>5.1 Score Dimensions (all 0–10 scale)</h3>
+  <table>
+    <thead><tr><th>Score</th><th>Derived From</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><strong>communication_score</strong></td><td>Transcript text</td><td>Sentence clarity, vocabulary richness, logical structure, completeness of verbal answers.</td></tr>
+      <tr><td><strong>technical_score</strong></td><td>Transcript text + job role</td><td>Technical accuracy per question, depth of knowledge, problem-solving approach, relevance to stated role.</td></tr>
+      <tr><td><strong>confidence_score</strong></td><td>Transcript + emotion data</td><td>Combines verbal assertiveness signals with facial emotion distribution (Happiness/Neutral raises; Fear/Anger lowers).</td></tr>
+      <tr><td><strong>visual_confidence_score</strong></td><td>CNN emotion data + presence rate</td><td>Null if no camera data. Penalised if presence rate &lt;70%. Set to "Insufficient data" if presence &lt;40%.</td></tr>
+      <tr><td><strong>overall_score</strong></td><td>All four sub-scores</td><td>LLM-computed weighted average. Each sub-score includes a <code>_breakdown</code> array of criterion objects with <code>met</code> (bool), <code>impact</code> (e.g. "+2.0"), and an example note.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.2 Camera Presence Rate</h3>
+  <div class="formula">presence_rate = (frames_with_face / total_frames) × 100</div>
+  <table>
+    <thead><tr><th>Threshold</th><th>Effect on Report</th></tr></thead>
+    <tbody>
+      <tr><td>≥ 70%</td><td>No penalty. <code>absence_warning = null</code>.</td></tr>
+      <tr><td>40–69%</td><td>Amber warning banner shown. Moderate penalty mandated on <code>visual_confidence_score</code>.</td></tr>
+      <tr><td>&lt; 40%</td><td>Red critical banner shown. Significant penalty mandated. <code>visual_confidence_score</code> may be set to "Insufficient data".</td></tr>
+      <tr><td>0 frames</td><td>No presence tracking available (legacy session). Treated as 100% — no penalty.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.3 Dominant Emotion → Visual Descriptor</h3>
+  <table>
+    <thead><tr><th>Dominant Emotion</th><th>Descriptor Given to LLM</th></tr></thead>
+    <tbody>
+      <tr><td>Neutral</td><td>"Composed and calm"</td></tr>
+      <tr><td>Happiness</td><td>"Positive and engaged"</td></tr>
+      <tr><td>Fear</td><td>"Visibly nervous or anxious"</td></tr>
+      <tr><td>Sadness</td><td>"Low energy or disengaged"</td></tr>
+      <tr><td>Disgust</td><td>"Uncomfortable with certain topics"</td></tr>
+      <tr><td>Anger</td><td>"Defensive or under stress"</td></tr>
+      <tr><td>Surprise</td><td>"Caught off-guard by several questions"</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.4 Academic Integrity Detection (Two-Layer)</h3>
+  <p><strong>Layer 1 — Keyword Detection:</strong> 14 regex patterns (case-insensitive) catch explicit AI self-disclosure: phrases like <em>"I am a large language model"</em>, <em>"as an AI"</em>, <em>"my training data"</em>, named AI tools (ChatGPT, Claude, Gemini, Bard, Copilot), and <em>"I cannot browse the internet"</em>. Each match is HIGH severity.</p>
+  <p><strong>Layer 2 — Linguistic Naturalness Analysis:</strong> Five objective signals are computed per answer and summed into a suspicion score:</p>
+  <table>
+    <thead><tr><th>Signal</th><th>Suspicion Points Added</th></tr></thead>
+    <tbody>
+      <tr><td>Zero disfluencies ("um/uh/like") in ≥40-word answer</td><td>+3</td></tr>
+      <tr><td>Disfluency rate &lt;1% in ≥60-word answer</td><td>+1</td></tr>
+      <tr><td>≥2 enumeration markers ("firstly/furthermore/additionally")</td><td>+1 (or +2 if ≥3 markers)</td></tr>
+      <tr><td>AI hedging phrases ("plays a crucial role", "it is important to note")</td><td>+1 per match, max +4</td></tr>
+      <tr><td>No personal anecdotes in ≥60-word answer</td><td>+1</td></tr>
+      <tr><td>≥95% grammatically complete sentences across ≥4 sentences</td><td>+1</td></tr>
+    </tbody>
+  </table>
+  <div class="formula">naturalness = max(0, 10 − suspicion_pts × 2)</div>
+
+  <h3>5.5 Integrity Risk Level Thresholds</h3>
+  <table>
+    <thead><tr><th>Risk Level</th><th>Trigger Conditions</th></tr></thead>
+    <tbody>
+      <tr><td><span class="risk-high">HIGH</span></td><td>Any keyword hit, OR naturalness ≤ 2 on any single answer, OR multiple answers all at naturalness ≤ 4.</td></tr>
+      <tr><td><span class="risk-med">MEDIUM</span></td><td>Naturalness ≤ 4 on any single answer, OR zero disfluencies detected across ≥2 answers.</td></tr>
+      <tr><td><span class="risk-low">LOW</span></td><td>Naturalness 5–6 with some signals but no definitive evidence of AI use.</td></tr>
+      <tr><td><span class="risk-none">NONE</span></td><td>Naturalness ≥ 7 on all answers, zero signals detected.</td></tr>
+    </tbody>
+  </table>
+  <p class="small">The LLM is explicitly instructed: <em>"Absence of explicit AI phrases does NOT mean the candidate is innocent."</em> Integrity flags at HIGH risk must be reflected in both the verdict and the report summary.</p>
+
+  <div class="page-footer">
+    <span>Real-Time Multimodal AI Interviewer</span>
+    <span>Devang Wani · Capstone 2026</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE 6 — HIRE DECISION + REPORT PAGE + AUTH
+     ══════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <span class="proj">AI Interviewer — Project Report</span>
+    <span class="pg">Page 6 of 6</span>
+  </div>
+
+  <h2>6. Hire / Maybe / No-Hire Decision</h2>
+  <p>The final verdict is an LLM holistic judgment combining all four evidence sources. No single numeric cutoff is hard-coded; instead, mandatory rules are enforced in the system prompt:</p>
+
+  <table>
+    <thead><tr><th>Verdict</th><th>Expected Profile</th><th>Badge Colour</th></tr></thead>
+    <tbody>
+      <tr class="verdict-row-strong"><td><strong>Strong Hire</strong></td><td>High scores across all dimensions, natural speech, positive emotion, no integrity flags.</td><td>Emerald</td></tr>
+      <tr class="verdict-row-hire"><td><strong>Hire</strong></td><td>Good overall and technical scores, minor weaknesses, no significant flags.</td><td>Green</td></tr>
+      <tr class="verdict-row-maybe"><td><strong>Maybe</strong></td><td>Mixed signals — moderate scores OR minor integrity / presence concerns.</td><td>Amber</td></tr>
+      <tr class="verdict-row-nohire"><td><strong>No Hire</strong></td><td>Low technical/communication scores, HIGH integrity risk, or critical presence absence.</td><td>Red</td></tr>
+    </tbody>
+  </table>
+  <p class="small" style="margin-top:4px;">On JSON parse failure the fallback verdict defaults to <strong>"Maybe"</strong> and all scores to <strong>5.0</strong>. Integrity risk is still computed deterministically from pre-computed flags (no LLM call needed).</p>
+
+  <h2 style="margin-top:14px;">7. ReportPage <code>/report/:id</code></h2>
+  <p>Fetches the report from the API (or uses the Zustand-cached copy to avoid a round trip). Renders all sections in order: verdict badge → absence warning banner → integrity warning banner → five animated score rings → per-score criterion breakdowns → AI summary → emotion bar chart with presence rate bar → strengths/improvements lists → per-question feedback cards.</p>
+
+  <div class="two-col">
+    <div>
+      <h4>Inline Components</h4>
+      <table>
+        <thead><tr><th>Component</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>ScoreRing</code></td><td>SVG circular progress ring. Green ≥7.5, amber ≥5, red &lt;5. Score value at centre.</td></tr>
+          <tr><td><code>MetricBar</code></td><td>Horizontal bar with same three-colour thresholds; used for secondary metrics.</td></tr>
+          <tr><td><code>ScoreBreakdown</code></td><td>Collapsible table for one score dimension: criterion name, met/not-met icon, point-impact badge, example note.</td></tr>
+          <tr><td><code>Tag</code></td><td>Coloured pill badge for emotion summary label fields.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h4>Page-Level Functions</h4>
+      <table>
+        <thead><tr><th>Function</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>handleDownload()</code></td><td>Calls <code>window.print()</code> to export the report as a PDF. Print-only CSS hides the action buttons.</td></tr>
+          <tr><td><code>handleDelete()</code></td><td>Confirms → calls <code>DELETE /interviews/:id</code> → resets Zustand → navigates to dashboard.</td></tr>
+          <tr><td><code>emotionColor(label)</code></td><td>Maps emotion label strings to Tailwind colour classes for the distribution bar chart.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h2 style="margin-top:14px;">8. Auth, Models & Infrastructure</h2>
+
+  <div class="two-col">
+    <div>
+      <h4>Auth Routes — <code>routes/auth.py</code></h4>
+      <table>
+        <thead><tr><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>POST /login</code></td><td>Upserts user in MongoDB after Firebase sign-in.</td></tr>
+          <tr><td><code>GET /me</code></td><td>Returns the authenticated user's profile.</td></tr>
+          <tr><td><code>PATCH /me/role</code></td><td>First-time role selection; no switch count increment.</td></tr>
+          <tr><td><code>POST /me/switch-role</code></td><td>One-time role change; enforces <code>role_switch_count &lt; 1</code>; increments atomically via <code>$inc</code>.</td></tr>
+          <tr><td><code>GET /user-by-email</code></td><td>Recruiter lookup — find a candidate by email.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h4>Key Data Models</h4>
+      <table>
+        <thead><tr><th>Model</th><th>Key Fields</th></tr></thead>
+        <tbody>
+          <tr><td><code>InterviewInDB</code></td><td>user_id, job_role, interview_type, difficulty, num_questions, status (SCHEDULED/PENDING/IN_PROGRESS/COMPLETED/CANCELLED), questions_answers[], overall_score, report_card, emotion_stats, presence_stats, scheduled_by, candidate_name, resume_context</td></tr>
+          <tr><td><code>UserInDB</code></td><td>firebase_uid, email, display_name, role ("candidate"/"recruiter"/null), role_switch_count (max 1)</td></tr>
+          <tr><td><code>QuestionAnswer</code></td><td>question_text, answer_transcript, emotion_scores, speech_metrics, llm_score, llm_feedback</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h4 style="margin-top:10px;">Application Startup (<code>main.py</code>)</h4>
+  <p style="font-size:9.5pt;">FastAPI app with <code>@asynccontextmanager</code> lifespan: connects MongoDB Atlas, loads MobileNetV2 emotion model (graceful skip if file missing), then registers three routers under <code>/api/v1</code> (auth, interview, analysis). CORS middleware applied. Health check at <code>GET /health</code>.</p>
+
+  <h4>Zustand Stores</h4>
+  <table>
+    <thead><tr><th>Store</th><th>State managed</th></tr></thead>
+    <tbody>
+      <tr><td><code>authStore</code></td><td>Firebase user object + MongoDB user profile (role, switch count).</td></tr>
+      <tr><td><code>interviewStore</code></td><td>Active interview doc, current question index, transcript, partial transcript, isListening, isSpeaking, tabSwitchCount, report card cache. <code>reset()</code> clears all state.</td></tr>
+      <tr><td><code>themeStore</code></td><td>Active theme ("dark"/"light"/"aesthetic"). Persisted to localStorage; applied on rehydration to prevent FOUC.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="card" style="margin-top:14px; border-color:#a5b4fc;">
+    <strong style="color:#3730a3;">Critical Invariants (must never be reverted)</strong>
+    <ul style="margin-top:5px; font-size:9.5pt;">
+      <li><strong>Deepgram lazy-connection:</strong> Deepgram must only connect on the first audio byte, not at WebSocket open — reverting causes 1011 timeout during TTS playback.</li>
+      <li><strong>Groq UUID nonce in system prompt:</strong> Nonce must be in the system prompt (not just user prompt) to defeat Groq's system-prompt-level cache.</li>
+      <li><strong>Haar Cascade on full 224×224 frame:</strong> Never halve the frame before cascade detection — shrinking to 112×112 causes faces to fall below the minimum detection size.</li>
+      <li><strong>Emotion normalisation /255.0:</strong> The MobileNetV2 model was trained with <code>rescale=1/255</code>; using <code>(x/127.5)-1</code> causes all predictions to collapse to Neutral.</li>
+      <li><strong>WebSocket <code>ws</code> excluded from startup effect deps:</strong> The <code>ws</code> object is recreated on every render; including it causes infinite re-fires of the startup effect.</li>
+    </ul>
+  </div>
+
+  <div class="page-footer">
+    <span>Real-Time Multimodal AI Interviewer</span>
+    <span>Devang Wani · Capstone 2026</span>
+  </div>
+</div>
+
+</body>
+</html>
